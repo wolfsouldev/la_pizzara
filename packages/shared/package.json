@@ -1,0 +1,21 @@
+{
+  "name": "@uni/shared",
+  "private": true,
+  "version": "0.1.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0"
+  },
+  "files": [
+    "dist"
+  ]
+}
