@@ -1,0 +1,4 @@
+workflows:
+  syncSpecToCollection:
+    - spec: ../postman/specs/platform.openapi.json
+      collection: ../postman/collections/University Phase 8
