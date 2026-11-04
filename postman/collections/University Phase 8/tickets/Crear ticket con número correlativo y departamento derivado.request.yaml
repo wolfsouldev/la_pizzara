@@ -1,0 +1,23 @@
+$kind: http-request
+url: '{{baseUrl}}/tickets'
+method: POST
+headers:
+- key: Origin
+  value: '{{origin}}'
+  disabled: false
+  description: '(Required) '
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+  disabled: false
+  description: '(Required) '
+- key: Content-Type
+  value: application/json
+- key: Accept
+  value: application/json
+body:
+  type: json
+  content: "{\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"{{title}}\",\n\
+    \  \"description\": \"{{description}}\"\n}"
+auth:
+  type: noauth
+order: 1000

@@ -1,0 +1,16 @@
+$kind: http-request
+description: Sesión y destinatario exclusivos. Lectura y conteos filtrados por permisos
+  actuales del recurso. Notificaciones internas jamás visibles para USER. Escrituras
+  con origen y CSRF. Id ajeno/inaccesible devuelve 404.
+url: '{{baseUrl}}/notifications?page=1&limit=20&unreadOnly=false'
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  page: '1'
+  limit: '20'
+  unreadOnly: 'false'
+auth:
+  type: noauth
+settings: {}
+order: 1000

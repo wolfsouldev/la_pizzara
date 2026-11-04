@@ -1,0 +1,27 @@
+$kind: http-request
+description: 'Interno: USER siempre denegado. ADMIN global o TECHNICIAN activo con
+  pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE
+  configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear
+  tablero exclusivo ADMIN. Origen y CSRF obligatorios al escribir.'
+url: '{{baseUrl}}/boards/:id/archive'
+method: POST
+headers:
+- key: Origin
+  value: string
+  disabled: false
+  description: '(Required) '
+- key: X-CSRF-Token
+  value: string
+  disabled: false
+  description: '(Required) '
+- key: Accept
+  value: application/json
+pathVariables:
+- key: id
+  value: '{{id}}'
+  disabled: false
+  description: '(Required) '
+auth:
+  type: noauth
+settings: {}
+order: 3000

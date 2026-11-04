@@ -1,0 +1,12 @@
+$kind: http-request
+description: 'ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones
+  solo si es responsable. Asignación y cambio de departamento exclusivos de ADMIN.
+  CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF.'
+url: '{{baseUrl}}/staff/dashboard'
+method: GET
+headers:
+  Accept: application/json
+auth:
+  type: noauth
+settings: {}
+order: 3000

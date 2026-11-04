@@ -1,0 +1,23 @@
+$kind: http-request
+url: '{{baseUrl}}/auth/login'
+method: POST
+headers:
+- key: Origin
+  value: '{{origin}}'
+  disabled: false
+  description: '(Required) '
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+  disabled: false
+  description: '(Required) '
+- key: Content-Type
+  value: application/json
+- key: Accept
+  value: application/json
+body:
+  type: json
+  content: "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\
+    \n}"
+order: 2000
+auth:
+  type: noauth

@@ -1,0 +1,21 @@
+$kind: http-request
+url: '{{baseUrl}}/tickets/my?page=1&limit=20'
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+- key: page
+  value: '1'
+  disabled: false
+- key: limit
+  value: '20'
+  disabled: false
+- key: search
+  value: '{{search}}'
+  disabled: true
+- key: status
+  value: '{{status}}'
+  disabled: true
+auth:
+  type: noauth
+order: 2000

@@ -1,0 +1,24 @@
+$kind: http-request
+description: 'ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones
+  solo si es responsable. Asignación y cambio de departamento exclusivos de ADMIN.
+  CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF.'
+url: '{{baseUrl}}/staff/tickets/:id/events?page=1&limit=20'
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+- key: page
+  value: '1'
+  disabled: false
+- key: limit
+  value: '20'
+  disabled: false
+pathVariables:
+- key: id
+  value: '{{id}}'
+  disabled: false
+  description: '(Required) '
+auth:
+  type: noauth
+settings: {}
+order: 7000

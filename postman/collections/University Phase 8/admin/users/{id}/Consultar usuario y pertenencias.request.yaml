@@ -1,0 +1,11 @@
+$kind: http-request
+url: '{{baseUrl}}/admin/users/:id'
+method: GET
+headers:
+  Accept: application/json
+pathVariables:
+- key: id
+  value: '{{id}}'
+auth:
+  type: noauth
+order: 1000

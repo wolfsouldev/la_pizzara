@@ -1,0 +1,18 @@
+$kind: http-request
+url: '{{baseUrl}}/tickets/:id?historyPage=1&historyLimit=20'
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+- key: historyPage
+  value: '1'
+  disabled: false
+- key: historyLimit
+  value: '20'
+  disabled: false
+pathVariables:
+- key: id
+  value: '{{id}}'
+auth:
+  type: noauth
+order: 1000

@@ -1,0 +1,31 @@
+$kind: http-request
+description: VIEW puede consultar. MANAGE administra categorías en tableros activos.
+  EDIT asigna categorías mediante TaskCreate/TaskPatch. Nombre único sin distinguir
+  mayúsculas por tablero, máximo 100 categorías. Eliminar retira asociaciones; nunca
+  elimina tareas. Categorías de otro tablero se rechazan.
+url: '{{baseUrl}}/boards/:id/labels/:labelId'
+method: DELETE
+headers:
+- key: Origin
+  value: '{{origin}}'
+  disabled: false
+  description: '(Required) '
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+  disabled: false
+  description: '(Required) '
+- key: Accept
+  value: application/json
+pathVariables:
+- key: id
+  value: '{{id}}'
+  disabled: false
+  description: '(Required) '
+- key: labelId
+  value: '{{labelId}}'
+  disabled: false
+  description: '(Required) '
+auth:
+  type: noauth
+settings: {}
+order: 2000

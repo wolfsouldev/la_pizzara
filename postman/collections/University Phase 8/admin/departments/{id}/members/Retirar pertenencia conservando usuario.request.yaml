@@ -1,0 +1,22 @@
+$kind: http-request
+url: '{{baseUrl}}/admin/departments/:id/members/:userId'
+method: DELETE
+headers:
+- key: Origin
+  value: '{{origin}}'
+  disabled: false
+  description: '(Required) '
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+  disabled: false
+  description: '(Required) '
+- key: Accept
+  value: application/json
+pathVariables:
+- key: id
+  value: '{{id}}'
+- key: userId
+  value: '{{userId}}'
+auth:
+  type: noauth
+order: 3000

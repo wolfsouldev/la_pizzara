@@ -1,0 +1,26 @@
+$kind: http-request
+url: '{{baseUrl}}/admin/categories/:id'
+method: PATCH
+headers:
+- key: Origin
+  value: '{{origin}}'
+  disabled: false
+  description: '(Required) '
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+  disabled: false
+  description: '(Required) '
+- key: Content-Type
+  value: application/json
+- key: Accept
+  value: application/json
+pathVariables:
+- key: id
+  value: '{{id}}'
+body:
+  type: json
+  content: "{\n  \"name\": \"{{name}}\",\n  \"slug\": \"{{slug}}\",\n  \"description\"\
+    : \"{{description}}\",\n  \"isActive\": {{isActive}}\n}"
+auth:
+  type: noauth
+order: 3000

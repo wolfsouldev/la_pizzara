@@ -1,0 +1,20 @@
+$kind: collection
+description: Sesiones reales SQLite, credenciales locales o LDAPS, origen estricto
+  y CSRF. Acceso sin credenciales solo en desarrollo habilitado explícitamente y con
+  cuenta local registrada por CLI. Sin registro público ni bootstrap administrativo
+  HTTP.
+variables:
+- key: baseUrl
+  value: http://127.0.0.1:3000/api/v1
+- key: origin
+  value: http://localhost:5173
+- key: csrfToken
+  value: ''
+- key: id
+  value: ''
+- key: labelId
+  value: ''
+- key: labelName
+  value: ''
+- key: color
+  value: ''

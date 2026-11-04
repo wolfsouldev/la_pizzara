@@ -1,0 +1,68 @@
+$kind: collection
+description: Sesiones reales SQLite, credenciales locales o LDAPS, origen estricto
+  y CSRF. Acceso sin credenciales solo en desarrollo habilitado explícitamente y con
+  cuenta local registrada por CLI. Sin registro público ni bootstrap administrativo
+  HTTP.
+variables:
+- key: baseUrl
+  value: http://127.0.0.1:3000/api/v1
+- key: origin
+  value: http://localhost:5173
+- key: csrfToken
+  value: ''
+- key: username
+  value: ''
+- key: password
+  value: ''
+- key: id
+  value: ''
+- key: userId
+  value: ''
+- key: departmentId
+  value: ''
+- key: categoryId
+  value: ''
+- key: name
+  value: ''
+- key: title
+  value: ''
+- key: body
+  value: ''
+- key: slug
+  value: ''
+- key: description
+  value: ''
+- key: isActive
+  value: 'true'
+- key: role
+  value: ''
+- key: status
+  value: ''
+- key: priority
+  value: ''
+- key: assignedToId
+  value: ''
+- key: visibility
+  value: ''
+- key: search
+  value: ''
+- key: unassigned
+  value: ''
+- key: boardId
+  value: ''
+- key: columnId
+  value: ''
+- key: itemId
+  value: ''
+- key: permission
+  value: ''
+- key: targetColumnId
+  value: ''
+- key: targetIndex
+  value: ''
+- key: archived
+  value: ''
+- key: isArchived
+  value: ''
+- key: ticketId
+  value: ''

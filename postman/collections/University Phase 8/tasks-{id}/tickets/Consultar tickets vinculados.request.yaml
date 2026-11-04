@@ -1,0 +1,22 @@
+$kind: http-request
+description: Relaciones exclusivamente internas. Lectura exige alcance de ticket y
+  pertenencia al tablero (VIEW). Escritura exige responsable del ticket o ADMIN y
+  EDIT del tablero. Solo mismo departamento. Tickets CLOSED no admiten cambios. Altas
+  sobre tarea/tablero archivados rechazadas; retirada de vínculos permitida como revocación
+  privada. Listas paginadas y filtradas en SQL. Nunca aparece en /tickets público.
+url: '{{baseUrl}}/tasks/:id/tickets?page=1&limit=20'
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  page: '1'
+  limit: '20'
+pathVariables:
+- key: id
+  value: '{{id}}'
+  disabled: false
+  description: '(Required) '
+auth:
+  type: noauth
+settings: {}
+order: 1000

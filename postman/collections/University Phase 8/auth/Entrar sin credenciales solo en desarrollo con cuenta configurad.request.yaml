@@ -1,0 +1,18 @@
+$kind: http-request
+name: Entrar sin credenciales solo en desarrollo con cuenta configurada
+url: '{{baseUrl}}/auth/development-login'
+method: POST
+headers:
+- key: Origin
+  value: '{{origin}}'
+  disabled: false
+  description: '(Required) '
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+  disabled: false
+  description: '(Required) '
+- key: Accept
+  value: application/json
+order: 3000
+auth:
+  type: noauth

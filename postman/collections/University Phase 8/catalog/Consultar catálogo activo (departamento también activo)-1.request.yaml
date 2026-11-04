@@ -1,0 +1,13 @@
+$kind: http-request
+name: Consultar catálogo activo (departamento también activo)
+url: '{{baseUrl}}/catalog/categories'
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+- key: departmentId
+  value: '{{departmentId}}'
+  disabled: true
+auth:
+  type: noauth
+order: 2000

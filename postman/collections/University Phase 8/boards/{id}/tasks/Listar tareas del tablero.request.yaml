@@ -1,0 +1,28 @@
+$kind: http-request
+description: 'Interno: USER siempre denegado. ADMIN global o TECHNICIAN activo con
+  pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE
+  configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear
+  tablero exclusivo ADMIN. Origen y CSRF obligatorios al escribir.'
+url: '{{baseUrl}}/boards/:id/tasks?page=1&limit=20'
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+- key: page
+  value: '1'
+  disabled: false
+- key: limit
+  value: '20'
+  disabled: false
+- key: archived
+  value: '{{archived}}'
+  disabled: true
+pathVariables:
+- key: id
+  value: '{{id}}'
+  disabled: false
+  description: '(Required) '
+auth:
+  type: noauth
+settings: {}
+order: 1000

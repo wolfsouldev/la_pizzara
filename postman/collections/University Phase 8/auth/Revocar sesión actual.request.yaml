@@ -1,0 +1,15 @@
+$kind: http-request
+url: '{{baseUrl}}/auth/logout'
+method: POST
+headers:
+- key: Origin
+  value: '{{origin}}'
+  disabled: false
+  description: '(Required) '
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+  disabled: false
+  description: '(Required) '
+auth:
+  type: noauth
+order: 4000

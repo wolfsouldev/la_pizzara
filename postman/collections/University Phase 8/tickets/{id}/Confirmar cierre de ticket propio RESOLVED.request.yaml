@@ -1,0 +1,20 @@
+$kind: http-request
+url: '{{baseUrl}}/tickets/:id/close'
+method: POST
+headers:
+- key: Origin
+  value: '{{origin}}'
+  disabled: false
+  description: '(Required) '
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+  disabled: false
+  description: '(Required) '
+- key: Accept
+  value: application/json
+pathVariables:
+- key: id
+  value: '{{id}}'
+auth:
+  type: noauth
+order: 4000

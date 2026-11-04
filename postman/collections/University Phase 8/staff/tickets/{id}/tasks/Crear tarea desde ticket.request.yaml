@@ -1,0 +1,27 @@
+$kind: http-request
+description: Relaciones exclusivamente internas. Lectura exige alcance de ticket y
+  pertenencia al tablero (VIEW). Escritura exige responsable del ticket o ADMIN y
+  EDIT del tablero. Solo mismo departamento. Tickets CLOSED no admiten cambios. Altas
+  sobre tarea/tablero archivados rechazadas; retirada de vínculos permitida como revocación
+  privada. Listas paginadas y filtradas en SQL. Nunca aparece en /tickets público.
+url: '{{baseUrl}}/staff/tickets/:id/tasks'
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Origin: '{{origin}}'
+  X-CSRF-Token: '{{csrfToken}}'
+pathVariables:
+- key: id
+  value: '{{id}}'
+  disabled: false
+  description: '(Required) '
+body:
+  type: json
+  content: "{\n  \"boardId\": \"{{boardId}}\",\n  \"columnId\": \"{{columnId}}\",\n\
+    \  \"title\": \"{{title}}\",\n  \"description\": \"{{description}}\",\n  \"priority\"\
+    : \"{{priority}}\",\n  \"dueAt\": null,\n  \"assigneeIds\": []\n}"
+auth:
+  type: noauth
+settings: {}
+order: 2000
