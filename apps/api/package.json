@@ -1,0 +1,54 @@
+{
+  "name": "api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k \"tsc --watch --preserveWatchOutput\" \"node --watch dist/main.js\"",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/scripts/migrate.ts",
+    "user:create": "tsx src/scripts/create-local-user.ts",
+    "admin:promote": "tsx src/scripts/promote-admin.ts",
+    "db:backup": "tsx src/scripts/backup.ts",
+    "db:restore": "tsx src/scripts/restore.ts",
+    "ad:check": "tsx src/scripts/check-directory.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.0",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.1.0",
+    "@nestjs/platform-express": "^11.1.0",
+    "@nestjs/platform-socket.io": "11.2.8",
+    "@nestjs/swagger": "^11.2.0",
+    "@nestjs/throttler": "^6.7.1",
+    "@nestjs/websockets": "11.2.8",
+    "@uni/shared": "workspace:*",
+    "argon2": "^0.44.0",
+    "better-sqlite3": "^12.4.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.0",
+    "drizzle-orm": "^0.44.0",
+    "helmet": "^8.1.0",
+    "ldapts": "^8.2.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "socket.io": "4.8.4",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.0",
+    "concurrently": "^9.2.0",
+    "drizzle-kit": "^0.31.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  },
+  "files": [
+    "dist",
+    "drizzle"
+  ]
+}
