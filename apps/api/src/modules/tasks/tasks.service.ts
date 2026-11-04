@@ -1,0 +1,55 @@
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import type { TaskCreate, TaskPatch, TaskList, TaskMove, TaskMoveResult, KanbanPage, ChecklistPatch, BoardLabelInput } from '@uni/shared';
+import { TasksRepository } from '../../database/repositories/tasks.repository';
+import { BoardsRepository } from '../../database/repositories/boards.repository';
+import { AuditRepository } from '../../database/repositories/audit.repository';
+import { DatabaseUnitOfWork } from '../../database/unit-of-work';
+import { TaskAccessPolicy } from '../../common/policies/task-access.policy';
+import { BoardAccessPolicy } from '../../common/policies/board-access.policy';
+import { NotificationsService } from '../notifications/notifications.service';
+import { PaginatedResult } from '../../common/pagination';
+import type { User } from '../../database/schema';
+@Injectable()
+export class TasksService {
+  constructor(private readonly tasks: TasksRepository, private readonly boards: BoardsRepository, private readonly audit: AuditRepository, private readonly unit: DatabaseUnitOfWork, private readonly policy: TaskAccessPolicy, private readonly boardPolicy: BoardAccessPolicy, private readonly notifications: NotificationsService) {}
+  labels(user: User, boardId: string, q: KanbanPage) { this.boardPolicy.require(user, boardId); const rows = this.tasks.labels(boardId); return new PaginatedResult({ rows: rows.slice((q.page - 1) * q.limit, q.page * q.limit), total: rows.length }, q); }
+  private validateLabels(boardId: string, ids: string[]) { for (const id of ids) if (!this.tasks.label(boardId, id)) throw new ConflictException('Las categorías deben pertenecer al mismo tablero'); }
+  createLabel(user: User, boardId: string, input: BoardLabelInput) { return this.unit.run(() => { this.boardPolicy.require(user, boardId, 'MANAGE'); if (this.tasks.labels(boardId).length >= 100) throw new ConflictException('Máximo 100 categorías por tablero'); if (this.tasks.labelNameExists(boardId, input.name)) throw new ConflictException('Ya existe una categoría con ese nombre'); const label = this.tasks.createLabel(boardId, input); this.audit.record(user.id, 'BOARD_LABEL_CREATED', 'board', boardId, { labelId: label.id }); return label; }); }
+  updateLabel(user: User, boardId: string, id: string, input: BoardLabelInput) { return this.unit.run(() => { this.boardPolicy.require(user, boardId, 'MANAGE'); if (!this.tasks.label(boardId, id)) throw new NotFoundException('Categoría no encontrada'); if (this.tasks.labelNameExists(boardId, input.name, id)) throw new ConflictException('Ya existe una categoría con ese nombre'); const label = this.tasks.updateLabel(boardId, id, input); this.audit.record(user.id, 'BOARD_LABEL_UPDATED', 'board', boardId, { labelId: id }); return label; }); }
+  deleteLabel(user: User, boardId: string, id: string) { this.unit.run(() => { this.boardPolicy.require(user, boardId, 'MANAGE'); if (!this.tasks.label(boardId, id)) throw new NotFoundException('Categoría no encontrada'); this.tasks.deleteLabel(boardId, id); this.audit.record(user.id, 'BOARD_LABEL_DELETED', 'board', boardId, { labelId: id }); }); }
+  detail(user: User, id: string) { const { task, board } = this.policy.require(user, id); return { ...this.tasks.hydrate(user, [task])[0]!, author: this.tasks.author(task.createdById), boardName: board.board.name, columnName: this.boards.column(task.boardId, task.columnId)!.name, canEdit: !board.board.isArchived && task.archivedAt === null && board.permission !== 'VIEW' }; }
+  list(user: User, boardId: string, q: TaskList) { this.boardPolicy.require(user, boardId); return new PaginatedResult(this.tasks.list(user, boardId, q), q); }
+  private eligible(boardId: string, departmentId: string, userId: string) { if (!this.boards.membership(boardId, userId) || !this.boards.eligibleUser(departmentId, userId)) throw new ConflictException('El responsable debe ser miembro activo y elegible del tablero'); }
+  create(user: User, boardId: string, input: TaskCreate) {
+    return this.unit.run(() => { const { board } = this.boardPolicy.require(user, boardId, 'EDIT'); if (input.boardId && input.boardId !== boardId) throw new ConflictException('El tablero del cuerpo no coincide con la ruta'); if (!this.boards.column(boardId, input.columnId)) throw new NotFoundException('Columna no encontrada en este tablero');
+      this.validateLabels(boardId, input.labelIds);
+      for (const userId of input.assigneeIds) this.eligible(boardId, board.departmentId, userId);
+      const now = Date.now(); const order = this.tasks.order(user, boardId, input.columnId); const t = this.tasks.create(boardId, user.id, input, (order.at(-1)?.position ?? 0) + 1024, now);
+      this.tasks.setLabels(t.id, input.labelIds);
+      this.tasks.event(t.id, user.id, 'CREATED', now, { columnId: t.columnId });
+      for (const userId of input.assigneeIds) { this.tasks.addAssignee(t.id, userId, now); this.tasks.event(t.id, user.id, 'ASSIGNEE_ADDED', now, { userId }); this.notifications.taskAssigned(t, userId, user.id, now); }
+      this.audit.record(user.id, 'TASK_CREATED', 'task', t.id, { boardId }); return this.detail(user, t.id);
+    });
+  }
+  update(user: User, id: string, patch: TaskPatch) { return this.unit.run(() => { const { task: t } = this.policy.require(user, id, true); const now = Date.now(); const { labelIds, ...fields } = patch; if (labelIds) { this.validateLabels(t.boardId, labelIds); this.tasks.setLabels(id, labelIds); } const after = this.tasks.update(user, id, fields, now); this.tasks.event(id, user.id, 'UPDATED', now, { fields: Object.keys(patch), ...(labelIds ? { labelIds } : {}), before: { title: t.title, priority: t.priority, dueAt: t.dueAt }, after: { title: after.title, priority: after.priority, dueAt: after.dueAt } }); return this.detail(user, id); }); }
+  move(user: User, id: string, input: TaskMove): TaskMoveResult {
+    return this.unit.run(() => { const { task: t } = this.policy.require(user, id, true); if (!this.boards.column(t.boardId, input.targetColumnId)) throw new NotFoundException('Columna de destino no encontrada en este tablero');
+      const rows = this.tasks.order(user, t.boardId, input.targetColumnId).filter(row => row.id !== id); if (input.targetIndex > rows.length) throw new ConflictException('El índice de destino ya no es válido; actualiza el tablero');
+      const at = input.targetIndex; let previous = rows[at - 1]?.position ?? 0; let next = rows[at]?.position;
+      if ((next !== undefined && next - previous <= 1) || !Number.isSafeInteger(previous + 1024)) { rows.forEach((row, i) => { row.position = (i + 1) * 1024; this.tasks.position(user, row.id, row.position); }); previous = rows[at - 1]?.position ?? 0; next = rows[at]?.position; }
+      const position = next === undefined ? previous + 1024 : Math.floor((previous + next) / 2); const now = Date.now();
+      this.tasks.update(user, id, { columnId: input.targetColumnId, position }, now); this.tasks.event(id, user.id, 'MOVED', now, { fromColumnId: t.columnId, toColumnId: input.targetColumnId, fromPosition: t.position, toPosition: position, targetIndex: at }); this.audit.record(user.id, 'TASK_MOVED', 'task', id, { boardId: t.boardId, fromColumnId: t.columnId, toColumnId: input.targetColumnId });
+      return { taskId: id, boardId: t.boardId, columnId: input.targetColumnId, position, updatedAt: now, orders: [...new Set([t.columnId, input.targetColumnId])].map(columnId => ({ columnId, items: this.tasks.order(user, t.boardId, columnId) })) };
+    });
+  }
+  archive(user: User, id: string) { return this.unit.run(() => { this.policy.require(user, id, true); const now = Date.now(); this.tasks.update(user, id, { archivedAt: now }, now); this.tasks.event(id, user.id, 'ARCHIVED', now); this.audit.record(user.id, 'TASK_ARCHIVED', 'task', id); return this.detail(user, id); }); }
+  assign(user: User, id: string, userId: string) { return this.unit.run(() => { const { task, board } = this.policy.require(user, id, true); this.eligible(task.boardId, board.board.departmentId, userId); if (this.tasks.assigned(id, userId)) throw new ConflictException('El usuario ya es responsable'); const now = Date.now(); this.tasks.addAssignee(id, userId, now); this.tasks.update(user, id, {}, now); this.tasks.event(id, user.id, 'ASSIGNEE_ADDED', now, { userId }); this.notifications.taskAssigned(task, userId, user.id, now); return this.detail(user, id); }); }
+  unassign(user: User, id: string, userId: string) { this.unit.run(() => { this.policy.require(user, id, true); if (!this.tasks.assigned(id, userId)) throw new NotFoundException('Responsable no encontrado'); const now = Date.now(); this.tasks.removeAssignee(id, userId); this.tasks.update(user, id, {}, now); this.tasks.event(id, user.id, 'ASSIGNEE_REMOVED', now, { userId }); }); }
+  comments(user: User, id: string, q: KanbanPage) { this.policy.require(user, id); return new PaginatedResult(this.tasks.comments(user, id, q), q); }
+  comment(user: User, id: string, body: string) { return this.unit.run(() => { this.policy.require(user, id, true); const now = Date.now(); const c = this.tasks.addComment(id, user.id, body, now); this.tasks.update(user, id, {}, now); this.tasks.event(id, user.id, 'COMMENT_ADDED', now, { commentId: c.id }); return { id: c.id, taskId: id, body: c.body, author: { id: user.id, displayName: user.displayName }, createdAt: now, updatedAt: now }; }); }
+  checklist(user: User, id: string, q: KanbanPage) { this.policy.require(user, id); return new PaginatedResult(this.tasks.checklist(user, id, q), q); }
+  addChecklist(user: User, id: string, title: string) { return this.unit.run(() => { this.policy.require(user, id, true); const now = Date.now(); const item = this.tasks.addChecklist(id, title, now); this.tasks.update(user, id, {}, now); this.tasks.event(id, user.id, 'CHECKLIST_CHANGED', now, { itemId: item.id, action: 'ADDED' }); return item; }); }
+  updateChecklist(user: User, id: string, itemId: string, patch: ChecklistPatch) { return this.unit.run(() => { this.policy.require(user, id, true); if (!this.tasks.checklistItem(user, id, itemId)) throw new NotFoundException('Elemento no encontrado'); const now = Date.now(); const item = this.tasks.updateChecklist(id, itemId, patch, now); this.tasks.update(user, id, {}, now); this.tasks.event(id, user.id, 'CHECKLIST_CHANGED', now, { itemId, action: 'UPDATED', ...(patch.isCompleted !== undefined ? { isCompleted: patch.isCompleted } : {}) }); return item; }); }
+  removeChecklist(user: User, id: string, itemId: string) { this.unit.run(() => { this.policy.require(user, id, true); if (!this.tasks.checklistItem(user, id, itemId)) throw new NotFoundException('Elemento no encontrado'); const now = Date.now(); this.tasks.deleteChecklist(id, itemId); this.tasks.update(user, id, {}, now); this.tasks.event(id, user.id, 'CHECKLIST_CHANGED', now, { itemId, action: 'REMOVED' }); }); }
+  events(user: User, id: string, q: KanbanPage) { this.policy.require(user, id); return new PaginatedResult(this.tasks.events(user, id, q), q); }
+}
