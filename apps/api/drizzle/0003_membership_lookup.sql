@@ -1,0 +1,1 @@
+CREATE INDEX `department_members_user_idx` ON `department_members` (`user_id`);
