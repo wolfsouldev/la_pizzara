@@ -1,0 +1,79 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* One permanent theme, including Radix portals and native form fields. */
+@theme {
+  --font-sans: "Segoe UI Variable", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --color-background: #101114;
+  --color-foreground: #edf0f4;
+  --color-card: #17191d;
+  --color-card-foreground: #edf0f4;
+  --color-popover: #1c1f25;
+  --color-popover-foreground: #edf0f4;
+  --color-primary: #9db4ff;
+  --color-primary-foreground: #101729;
+  --color-secondary: #242830;
+  --color-secondary-foreground: #edf0f4;
+  --color-muted: #1d2026;
+  --color-muted-foreground: #a0a7b4;
+  --color-accent: #292e38;
+  --color-accent-foreground: #edf0f4;
+  --color-destructive: #f4a3ac;
+  --color-destructive-foreground: #291014;
+  --color-success: #8dddb5;
+  --color-warning: #e6c184;
+  --color-border: #30343d;
+  --color-input: #626c7d;
+  --color-ring: #9db4ff;
+  --color-sidebar: #131519;
+  --color-sidebar-foreground: #aeb5c2;
+  --color-sidebar-primary: #9db4ff;
+  --color-sidebar-primary-foreground: #101729;
+  --color-sidebar-accent: #252b39;
+  --color-sidebar-accent-foreground: #d0dcff;
+  --color-sidebar-border: #2a2d35;
+  --color-sidebar-ring: #9db4ff;
+}
+@layer base {
+  :root { color-scheme: dark; }
+  * { @apply border-border; scrollbar-width: thin; scrollbar-color: #414753 transparent; }
+  html { @apply bg-background; scroll-padding-top: 6rem; }
+  body { @apply m-0 bg-background font-sans text-foreground antialiased; }
+  ::selection { @apply bg-primary/25 text-foreground; }
+  h1, h2, h3 { text-wrap: balance; }
+  h1 { letter-spacing: -0.035em; }
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+    @apply min-h-10 w-full min-w-0 rounded-lg border border-input bg-background px-3 py-2 text-sm font-normal text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  textarea { resize: vertical; }
+  input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] { @apply border-destructive; }
+  input[type="checkbox"], input[type="radio"] { @apply size-4 shrink-0 accent-primary; }
+  label { @apply block text-sm font-medium text-foreground; }
+  label > input:not([type="checkbox"]):not([type="radio"]), label > select, label > textarea { @apply mt-2; }
+  button, a, summary, input[type="checkbox"], input[type="radio"] {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+  button:not(:disabled), select, summary { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  fieldset { min-width: 0; }
+  option, optgroup { @apply bg-popover text-foreground; }
+  input:-webkit-autofill { -webkit-text-fill-color: #edf0f4; box-shadow: 0 0 0 1000px #1d2026 inset; }
+  @media (max-width: 767px) {
+    input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px; min-height: 44px; }
+    button, [data-sidebar="trigger"], [data-sidebar="menu-button"], summary { min-height: 44px; }
+    [data-sidebar="trigger"], summary[aria-label^="Notificaciones"] { min-width: 44px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  }
+}
+@layer components {
+  .workspace-content { @apply mx-auto w-full max-w-[1440px] px-4 py-7 sm:px-7 lg:px-10 lg:py-9; }
+  .surface { @apply rounded-xl border border-border bg-card; }
+  .skip-link { @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:text-primary-foreground; }
+  .login-grid {
+    background-image: linear-gradient(#30343d55 1px, transparent 1px), linear-gradient(90deg, #30343d55 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(to bottom, transparent, black 25%, black 75%, transparent);
+  }
+}
