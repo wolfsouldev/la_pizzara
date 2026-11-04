@@ -1,0 +1,23 @@
+import { z } from 'zod';
+import { priorities, ticketStatuses } from '../constants';
+import { pageSchema } from './administration';
+import { ticketCommentCreateSchema, ticketEventTypes, ticketListSchema, ticketSummarySchema } from './tickets';
+
+export const staffTicketListSchema = ticketListSchema.extend({ departmentId: z.uuid().optional(), categoryId: z.uuid().optional(), priority: z.enum(priorities).optional(), assignedToId: z.uuid().optional(), unassigned: z.enum(['true', 'false']).transform(v => v === 'true').optional() }).refine(q => !(q.unassigned && q.assignedToId), 'No combines responsable con sin asignar');
+export const ticketStatusChangeSchema = z.strictObject({ status: z.enum(ticketStatuses) });
+export const ticketPriorityChangeSchema = z.strictObject({ priority: z.enum(priorities) });
+export const ticketAssignmentChangeSchema = z.strictObject({ assignedToId: z.uuid().nullable() });
+export const ticketDepartmentChangeSchema = z.strictObject({ departmentId: z.uuid(), categoryId: z.uuid(), assignedToId: z.uuid().nullable().optional() });
+export const staffCommentCreateSchema = ticketCommentCreateSchema.extend({ visibility: z.enum(['PUBLIC', 'INTERNAL']) });
+const personSchema = z.object({ id: z.uuid(), displayName: z.string(), username: z.string() });
+export const staffTicketSummarySchema = ticketSummarySchema.extend({ requester: personSchema, assignee: personSchema.nullable() });
+export const staffTicketDetailSchema = staffTicketSummarySchema.extend({ description: z.string(), assignedAt: z.number().nullable(), resolvedAt: z.number().nullable(), closedAt: z.number().nullable(), canEdit: z.boolean(), canAssign: z.boolean(), allowedStatuses: z.array(z.enum(ticketStatuses)) });
+export const staffCommentSchema = z.object({ id: z.uuid(), body: z.string(), visibility: z.enum(['PUBLIC', 'INTERNAL']), author: personSchema.omit({ username: true }), createdAt: z.number(), updatedAt: z.number() });
+export const staffEventSchema = z.object({ id: z.uuid(), eventType: z.enum(ticketEventTypes), actor: personSchema.omit({ username: true }).nullable(), metadata: z.record(z.string(), z.unknown()).nullable(), createdAt: z.number() });
+export const staffOptionsSchema = z.object({ departments: z.array(z.object({ id: z.uuid(), name: z.string(), isActive: z.boolean() })), categories: z.array(z.object({ id: z.uuid(), departmentId: z.uuid(), name: z.string(), isActive: z.boolean() })), assignees: z.array(personSchema.extend({ departmentId: z.uuid(), isActive: z.boolean() })) });
+export const ticketDashboardSchema = z.object({ totalTickets: z.number(), openTickets: z.number(), assignedTickets: z.number(), inProgressTickets: z.number(), waitingUserTickets: z.number(), resolvedTickets: z.number(), closedTickets: z.number(), unassignedTickets: z.number(), myAssignedTickets: z.number(), myPendingTasks: z.number(), ticketsByDepartment: z.array(z.object({ departmentId: z.uuid(), name: z.string(), count: z.number() })), ticketsByPriority: z.array(z.object({ priority: z.enum(priorities), count: z.number() })) });
+export const staffCommentsPageSchema = pageSchema(staffCommentSchema);
+export type StaffTicketList = z.infer<typeof staffTicketListSchema>;
+export type StaffTicketDetail = z.infer<typeof staffTicketDetailSchema>;
+export type TicketDepartmentChange = z.infer<typeof ticketDepartmentChangeSchema>;
+export type StaffCommentCreate = z.infer<typeof staffCommentCreateSchema>;

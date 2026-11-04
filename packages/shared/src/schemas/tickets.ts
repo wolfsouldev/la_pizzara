@@ -1,0 +1,25 @@
+import { z } from 'zod';
+import { ticketStatuses, priorities } from '../constants';
+import { pageSchema } from './administration';
+
+export const ticketCreateSchema = z.strictObject({ categoryId: z.uuid(), title: z.string().trim().min(3, 'Escribe al menos 3 caracteres').max(200), description: z.string().trim().min(10, 'Describe el problema con al menos 10 caracteres').max(10000) });
+export const ticketCommentCreateSchema = z.strictObject({ body: z.string().trim().min(1, 'Escribe tu respuesta').max(5000) });
+export const ticketListSchema = z.strictObject({ page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(100).default(20), search: z.string().trim().max(200).optional(), status: z.enum(ticketStatuses).optional() });
+export const ticketCommentsQuerySchema = ticketListSchema.omit({ search: true, status: true });
+export const ticketDetailQuerySchema = z.strictObject({ historyPage: z.coerce.number().int().min(1).default(1), historyLimit: z.coerce.number().int().min(1).max(100).default(20) });
+export const publicTicketEventTypes = ['CREATED', 'STATUS_CHANGED', 'RESOLVED', 'REOPENED', 'CLOSED'] as const;
+export const ticketEventTypes = ['CREATED', 'ASSIGNED', 'REASSIGNED', 'STATUS_CHANGED', 'PRIORITY_CHANGED', 'COMMENT_ADDED', 'RESOLVED', 'REOPENED', 'CLOSED'] as const;
+export const ticketSummarySchema = z.object({ id: z.uuid(), ticketNumber: z.number().int().positive(), publicNumber: z.string(), title: z.string(), department: z.object({ id: z.uuid(), name: z.string() }), category: z.object({ id: z.uuid(), name: z.string() }), status: z.enum(ticketStatuses), priority: z.enum(priorities), createdAt: z.number(), updatedAt: z.number() });
+export const publicTicketEventSchema = z.object({ id: z.uuid(), eventType: z.enum(publicTicketEventTypes), createdAt: z.number(), fromStatus: z.enum(ticketStatuses).optional(), toStatus: z.enum(ticketStatuses).optional() });
+export const ticketDetailSchema = ticketSummarySchema.extend({ description: z.string(), resolvedAt: z.number().nullable(), closedAt: z.number().nullable(), canClose: z.boolean(), canReopen: z.boolean(), reopenUntil: z.number().nullable(), history: pageSchema(publicTicketEventSchema) });
+export const publicTicketCommentSchema = z.object({ id: z.uuid(), body: z.string(), author: z.object({ id: z.uuid(), displayName: z.string(), isRequester: z.boolean() }), createdAt: z.number(), updatedAt: z.number() });
+export type TicketCreate = z.infer<typeof ticketCreateSchema>;
+export type TicketCommentCreate = z.infer<typeof ticketCommentCreateSchema>;
+export type TicketList = z.infer<typeof ticketListSchema>;
+export type TicketCommentsQuery = z.infer<typeof ticketCommentsQuerySchema>;
+export type TicketDetailQuery = z.infer<typeof ticketDetailQuerySchema>;
+export type TicketSummary = z.infer<typeof ticketSummarySchema>;
+export type TicketDetail = z.infer<typeof ticketDetailSchema>;
+export type PublicTicketComment = z.infer<typeof publicTicketCommentSchema>;
+export const ticketNumber = (value: number) => `UNI-${String(value).padStart(6, '0')}`;
+export const TICKET_REOPEN_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
