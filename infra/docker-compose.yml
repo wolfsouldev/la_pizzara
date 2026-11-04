@@ -1,0 +1,132 @@
+name: university-platform
+services:
+  api:
+    image: university-api:${RELEASE_TAG:?Define RELEASE_TAG}
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    init: true
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 30s
+    environment:
+      NODE_ENV: production
+      AUTH_PROVIDER: ldap
+      DEV_ACCESS_ENABLED: 'false'
+      APP_HOST: 0.0.0.0
+      APP_PORT: '3000'
+      APP_ORIGIN: ${APP_ORIGIN:?Define APP_ORIGIN HTTPS}
+      DATABASE_URL: /data/university.sqlite
+      BACKUP_DIRECTORY: /backups
+      TRUST_PROXY: ${CADDY_IPV4:?Define exact Caddy address on APP_SUBNET}
+      AD_URL: ${AD_URL:?Define real LDAPS URL}
+      AD_BASE_DN: ${AD_BASE_DN:?Define real base DN}
+      AD_BIND_DN: ${AD_BIND_DN:?Define service account DN}
+      AD_BIND_PASSWORD_FILE: /run/secrets/ad_bind_password
+      AD_CA_CERT_PATH: /app/certs/ad-ca.pem
+      AD_LOGIN_ATTRIBUTE: ${AD_LOGIN_ATTRIBUTE:-sAMAccountName}
+      AD_CONNECT_TIMEOUT_MS: ${AD_CONNECT_TIMEOUT_MS:-5000}
+      AD_OPERATION_TIMEOUT_MS: ${AD_OPERATION_TIMEOUT_MS:-10000}
+      AD_RECHECK_SECONDS: ${AD_RECHECK_SECONDS:-300}
+      SESSION_IDLE_HOURS: ${SESSION_IDLE_HOURS:-8}
+      SESSION_ABSOLUTE_HOURS: ${SESSION_ABSOLUTE_HOURS:-24}
+      LOGIN_RATE_LIMIT: ${LOGIN_RATE_LIMIT:-5}
+      LOGIN_RATE_WINDOW_SECONDS: ${LOGIN_RATE_WINDOW_SECONDS:-60}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    secrets: [ad_bind_password]
+    volumes:
+      - type: bind
+        source: ${DATA_DIRECTORY:?Define persistent local DATA_DIRECTORY}
+        target: /data
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${BACKUP_DIRECTORY:?Define BACKUP_DIRECTORY}
+        target: /backups
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${AD_CA_CERT_FILE:?Define public CA certificate file}
+        target: /app/certs/ad-ca.pem
+        read_only: true
+        bind:
+          create_host_path: false
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=64m,mode=1777']
+    networks: [app]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/api/v1/health').then(async r=>{if(!r.ok||(await r.json()).data.database!=='connected')process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+    logging: &logs
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+  web:
+    image: university-web:${RELEASE_TAG:?Define RELEASE_TAG}
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=16m,mode=1777']
+    networks: [app]
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, 'http://127.0.0.1:8080/']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging: *logs
+  caddy:
+    image: caddy:2.11.7-alpine
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: [no-new-privileges:true]
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Define university web FQDN}
+      APP_ORIGIN: ${APP_ORIGIN:?Define APP_ORIGIN HTTPS}
+      CADDY_TLS_CERT: ${CADDY_TLS_CERT:-internal}
+      CADDY_TLS_KEY: ${CADDY_TLS_KEY:-}
+    ports:
+      - '${PUBLIC_BIND_IP:?Bind only to authorized host interface}:${HTTP_PORT:-80}:80'
+      - '${PUBLIC_BIND_IP:?Bind only to authorized host interface}:${HTTPS_PORT:-443}:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      - type: bind
+        source: ${WEB_TLS_DIRECTORY:?Define directory for optional institutional web certificate}
+        target: /etc/caddy/tls
+        read_only: true
+        bind:
+          create_host_path: false
+    networks:
+      app:
+        ipv4_address: ${CADDY_IPV4:?Define exact Caddy address}
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    logging: *logs
+networks:
+  app:
+    # Egress is required for institutional DNS/LDAPS. No API/web published ports.
+    ipam:
+      config:
+        - subnet: ${APP_SUBNET:?Choose unused Docker subnet without LAN/VPN overlap}
+          ip_range: ${APP_DYNAMIC_RANGE:?Define dynamic IP pool excluding CADDY_IPV4}
+volumes:
+  caddy_data:
+  caddy_config:
+secrets:
+  ad_bind_password:
+    file: ${AD_BIND_PASSWORD_FILE:?Define private service password file}
