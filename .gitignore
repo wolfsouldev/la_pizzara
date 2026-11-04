@@ -1,0 +1,93 @@
+# Dependencies and package-manager caches
+node_modules/
+.pnpm-store/
+.npm/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Local configuration and secrets (keep committed example templates)
+.env
+.env.*
+!.env.example
+!.env.*.example
+!**/production.env.example
+infra/env/*.env
+!infra/env/*.env.example
+secrets/
+**/secrets/
+certs/
+**/certs/
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+
+# Local application data, SQLite and backups
+data/
+**/data/
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+*.bak
+*.backup
+backups/
+**/backups/
+
+# Compiled output and frontend/build caches
+dist/
+**/dist/
+build/
+**/build/
+.vite/
+**/.vite/
+.turbo/
+.cache/
+.next/
+.output/
+.vercel/
+storybook-static/
+*.tsbuildinfo
+vite.config.*.timestamp-*
+
+# Test/coverage output (not test source or fixtures)
+coverage/
+**/coverage/
+*.lcov
+playwright-report/
+test-results/
+blob-report/
+
+# Older Postman phase exports duplicate the cumulative phase 8 contract.
+# Keep the complete/current API collection and standalone feature collections.
+postman/collections/University Phase [1-7]/
+
+# Temporary files, logs and editor/OS noise
+tmp/
+temp/
+*.tmp
+*.temp
+*.log
+*.log.*
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+*.pid
+*.seed
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.fleet/
+.history/
