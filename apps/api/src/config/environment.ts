@@ -21,6 +21,7 @@ const schema = z.object({
   APP_HOST: z.string().default('127.0.0.1'),
   APP_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   APP_ORIGIN: z.url().default('http://localhost:5173'),
+  APP_ADDITIONAL_ORIGINS: z.string().default('').transform(value => value.split(',').map(origin => origin.trim()).filter(Boolean)),
   DATABASE_URL: z.string().min(1).default('./data/university.sqlite'),
   BACKUP_DIRECTORY: z.string().min(1).default('./backups'),
   AUTH_PROVIDER: z.enum(['local', 'ldap']).default('local'),
@@ -40,6 +41,14 @@ const schema = z.object({
   const fail = (message: string) => ctx.addIssue({ code: 'custom', message });
   const origin = new URL(v.APP_ORIGIN);
   if (origin.origin !== v.APP_ORIGIN) fail('APP_ORIGIN debe contener solamente esquema, host y puerto');
+  for (const additional of v.APP_ADDITIONAL_ORIGINS) {
+    try {
+      const parsed = new URL(additional);
+      if (parsed.origin !== additional || parsed.hostname.includes('*') || parsed.username || parsed.password) fail('APP_ADDITIONAL_ORIGINS solo admite orígenes exactos (esquema, host y puerto), sin comodines ni credenciales');
+      if (v.NODE_ENV === 'production' && parsed.protocol !== 'https:') fail('Los orígenes adicionales de producción deben usar HTTPS');
+      if (additional === v.APP_ORIGIN) fail('No repitas APP_ORIGIN en APP_ADDITIONAL_ORIGINS');
+    } catch { fail('APP_ADDITIONAL_ORIGINS contiene un origen no válido'); }
+  }
   if (v.DATABASE_URL === ':memory:' || v.DATABASE_URL.includes('mode=memory')) fail('SQLite debe persistir en archivo');
   if (v.NODE_ENV === 'production') {
     if (v.DEV_ACCESS_ENABLED) fail('Producción no admite entrada de desarrollo');
@@ -72,3 +81,4 @@ const result = schema.safeParse(process.env);
 if (!result.success) throw new Error(`Configuración no válida: ${result.error.issues.map(i => i.message).join('; ')}`);
 if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0') throw new Error('No se permite desactivar TLS');
 export const env = result.data;
+export const allowedOrigins = new Set([env.APP_ORIGIN, ...env.APP_ADDITIONAL_ORIGINS]);

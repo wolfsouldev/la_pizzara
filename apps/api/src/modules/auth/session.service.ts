@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import type { Request, Response, CookieOptions } from 'express';
-import { env } from '../../config/environment';
+import { allowedOrigins, env } from '../../config/environment';
 import { IdentityRepository } from '../../database/repositories/identity.repository';
 import { LdapIdentityProvider } from './providers/ldap-identity.provider';
 import type { User, AuthSession } from '../../database/schema';
@@ -25,7 +25,7 @@ export class SessionService {
     return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value) ? value : undefined;
   }
   assertOrigin(req: Request) {
-    if (req.get('Origin') !== env.APP_ORIGIN) throw new ForbiddenException('Origen no permitido');
+    if (!allowedOrigins.has(req.get('Origin') ?? '')) throw new ForbiddenException('Origen no permitido');
     if (env.NODE_ENV === 'production' && !req.secure) throw new ForbiddenException('Se requiere HTTPS');
   }
   async resolve(req: Request): Promise<SessionContext | undefined> {
@@ -37,7 +37,7 @@ export class SessionService {
     return this.resolveToken(token, !background && !catalogBackground);
   }
   async resolveRealtime(token:string,csrfToken:string,origin:string|undefined,secure:boolean):Promise<SessionContext|undefined> {
-    if(origin!==env.APP_ORIGIN||(env.NODE_ENV==='production'&&!secure)||!(/^[a-f0-9]{64}$/.test(token)))return;
+    if(!origin||!allowedOrigins.has(origin)||(env.NODE_ENV==='production'&&!secure)||!(/^[a-f0-9]{64}$/.test(token)))return;
     const context=await this.resolveToken(token,false);
     return context&&equals(hashToken(csrfToken),context.session.csrfTokenHash)?context:undefined;
   }

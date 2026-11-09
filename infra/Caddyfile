@@ -5,12 +5,8 @@
 		protocols h1 h2
 	}
 }
-http://{$APP_DOMAIN} {
-	redir {$APP_ORIGIN}{uri} permanent
-}
-https://{$APP_DOMAIN} {
-	# Default is the internal CA. Institutional certificate: two PEM file paths.
-	tls {$CADDY_TLS_CERT:internal} {$CADDY_TLS_KEY:}
+
+(app) {
 	encode zstd gzip
 	header {
 		-Server
@@ -45,4 +41,23 @@ https://{$APP_DOMAIN} {
 			}
 		}
 	}
+}
+
+http://{$APP_DOMAIN} {
+	redir {$APP_ORIGIN}{uri} permanent
+}
+
+http://{$PUBLIC_BIND_IP} {
+	redir https://{$PUBLIC_BIND_IP}{uri} permanent
+}
+
+https://{$APP_DOMAIN} {
+	tls {$CADDY_TLS_CERT:internal} {$CADDY_TLS_KEY:}
+	import app
+}
+
+# IP access uses Caddy's internal CA even when the domain uses an institutional cert.
+https://{$PUBLIC_BIND_IP} {
+	tls internal
+	import app
 }

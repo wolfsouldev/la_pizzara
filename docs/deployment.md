@@ -44,6 +44,22 @@ Editar `production.env` manualmente. No copiar el `.env` ni SQLite de desarrollo
 
 Las rutas relativas de Compose se anclan en `infra`; las rutas operativas del ejemplo son absolutas. No imprimir `docker compose config` con secretos en variables; usar `config --quiet`. Aquí la contraseña se monta desde archivo, no se interpola como texto en Compose ni aparece en `docker inspect` como variable de contraseña.
 
+### Acceso de emergencia por IP
+
+El dominio es la dirección canónica (`APP_DOMAIN`/`APP_ORIGIN`); además, Compose
+configura el origen HTTPS exacto de `PUBLIC_BIND_IP` como origen adicional
+permitido en CSRF y Socket.IO. Caddy redirige HTTP-IP a HTTPS-IP y sirve esa IP
+con su CA interna, incluso cuando el dominio usa certificado institucional. Por
+tanto `https://<PUBLIC_BIND_IP>` ofrece el mismo login y las mismas operaciones
+que el dominio. La IP no se añade como origen comodín; no se debe abrir acceso
+público si el host solo está autorizado en LAN/VPN.
+
+Los navegadores deben confiar en la raíz pública de Caddy para validar el
+certificado emitido para la IP. Distribuir esa raíz pública en cada cliente
+autorizado; no saltarse el aviso del certificado ni distribuir claves privadas.
+Si falla DNS pero el servidor/IP siguen accesibles, se puede usar la IP HTTPS; si
+el servidor o la ruta de red están caídos, ninguna de las dos direcciones sirve.
+
 Crear el secreto desde consola sin incluirlo en argumentos/historial (Bash; sustituir únicamente la ruta por la configurada):
 
 ```bash

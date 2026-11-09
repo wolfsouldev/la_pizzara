@@ -6,7 +6,7 @@ import type { IncomingMessage } from 'node:http';
 import type { TLSSocket } from 'node:tls';
 import type { Application } from 'express';
 import { z } from 'zod';
-import { env } from '../../config/environment';
+import { allowedOrigins, env } from '../../config/environment';
 import { SessionService } from '../auth/session.service';
 import { NotificationRealtimeService } from './notification-realtime.service';
 import { TicketRealtimeService } from './ticket-realtime.service';
@@ -17,7 +17,7 @@ type Client=Socket<ClientEvents,ServerEvents,Record<string,never>,SocketData>;
 type RealtimeServer=Server<ClientEvents,ServerEvents,Record<string,never>,SocketData>;
 let connections=()=>0;
 const authSchema=z.strictObject({csrfToken:z.string().regex(/^[a-f0-9]{64}$/)});
-@WebSocketGateway({path:'/api/v1/realtime',transports:['websocket'],maxHttpBufferSize:4096,connectTimeout:10000,allowRequest:(req:IncomingMessage,done:(err:string|null,ok:boolean)=>void)=>done(null,req.headers.origin===env.APP_ORIGIN&&(req.headers.cookie?.length??0)<=4096&&connections()<500)})
+@WebSocketGateway({path:'/api/v1/realtime',transports:['websocket'],maxHttpBufferSize:4096,connectTimeout:10000,allowRequest:(req:IncomingMessage,done:(err:string|null,ok:boolean)=>void)=>done(null,!!req.headers.origin&&allowedOrigins.has(req.headers.origin)&&(req.headers.cookie?.length??0)<=4096&&connections()<500)})
 export class NotificationsGateway implements OnGatewayInit<RealtimeServer>,OnGatewayConnection<Client>,OnModuleDestroy {
   private server?:RealtimeServer;
   private timer?:ReturnType<typeof setInterval>;
