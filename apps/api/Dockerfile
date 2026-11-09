@@ -1,5 +1,5 @@
 # Same Debian/Node ABI in build and runtime for better-sqlite3 and argon2.
-FROM node:26.13.0-bookworm-slim AS build
+FROM public.ecr.aws/docker/library/node:26.13.0-bookworm-slim AS build
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
@@ -14,7 +14,7 @@ COPY apps/api apps/api
 RUN pnpm --filter @uni/shared build && pnpm --filter api build \
     && pnpm --filter api deploy --prod --legacy /opt/api
 
-FROM node:26.13.0-bookworm-slim AS runtime
+FROM public.ecr.aws/docker/library/node:26.13.0-bookworm-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends util-linux ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app

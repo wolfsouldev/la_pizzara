@@ -1,4 +1,4 @@
-FROM node:26.13.0-bookworm-slim AS build
+FROM public.ecr.aws/docker/library/node:26.13.0-bookworm-slim AS build
 WORKDIR /app
 RUN npm install --global pnpm@12.15.0
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
@@ -10,7 +10,7 @@ COPY packages/shared packages/shared
 COPY apps/web apps/web
 RUN pnpm --filter @uni/shared build && pnpm --filter web build
 
-FROM caddy:2.11.7-alpine AS runtime
+FROM public.ecr.aws/docker/library/caddy:2.11.7-alpine AS runtime
 # Static web uses 8080: remove the upstream privileged-port file capability.
 RUN setcap -r /usr/bin/caddy
 ENV XDG_CONFIG_HOME=/tmp/config XDG_DATA_HOME=/tmp/data
