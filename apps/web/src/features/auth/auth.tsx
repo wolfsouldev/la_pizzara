@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, Outlet } from 'react-router';
 import { UserRole, sessionUserSchema } from '@uni/shared';
 import { api, ApiError, setCsrfToken } from '@/lib/api-client';
-import { Button } from '@/components/ui/button';
+import { SessionStatusPage } from './SessionStatusPage';
 
 export const homeFor = (role: UserRole) => role === UserRole.ADMIN ? '/admin/dashboard' : role === UserRole.TECHNICIAN ? '/staff/dashboard' : '/app/tickets';
 export function useSession() {
@@ -35,8 +35,7 @@ export function useLogout() {
 }
 export function ProtectedRoute({ roles }: { roles?: UserRole[] }) {
   const session = useSession();
-  if (session.isPending) return <p className="p-8" role="status">Verificando sesión…</p>;
-  if (session.error) return <main className="space-y-4 p-8"><h1 className="text-xl font-semibold">No se pudo verificar la sesión</h1><p role="alert">{session.error.message}</p><Button onClick={() => void session.refetch()}>Reintentar</Button></main>;
+  if (session.isPending || session.error) return <SessionStatusPage error={session.error} pending={session.isPending || session.isFetching} retry={() => void session.refetch()}/>;
   if (!session.data) return <Navigate to="/login" replace/>;
   if (roles && !roles.includes(session.data.role)) return <Navigate to="/unauthorized" replace/>;
   return <Outlet/>;

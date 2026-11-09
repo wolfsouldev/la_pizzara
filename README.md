@@ -44,11 +44,11 @@ Seguir [instalación, HTTPS, firewall, bootstrap y actualización](docs/deployme
 
 ## Requisitos
 
-- Node.js **24 LTS**, pnpm **12.15.0**.
+- Node.js **26.13.0 LTS**, pnpm **12.15.0**.
 - Herramientas C/C++ para compilar `better-sqlite3` si no existe binario compatible.
 - SQLite en disco local, nunca NFS; una sola instancia de API.
 
-Selecciona Node 24 antes de instalar; `.nvmrc` y `.node-version` fijan 24.15.0. No se modifica el Node del sistema. Si cambias de versión mayor, recompila los módulos nativos bajo la versión correcta.
+El proyecto usa Node 26.13.0 LTS o una versión posterior de la rama 26.x; `.nvmrc` y `.node-version` fijan 26.13.0. No necesitas mise ni prefijos para arrancar si Node 26 ya está activo en tu terminal. No se modifica el Node del sistema.
 
 ## Instalación desde cero
 
@@ -74,8 +74,12 @@ DEV_ACCESS_USERNAME=desarrollo
 ```
 
 ```bash
-pnpm dev
+npm run dev
 ```
+
+Desde la raíz, este único comando comprueba Node y el binario nativo de SQLite, compila y levanta shared, API y web. Si `better-sqlite3` conserva un binario de otro Node, lo reconstruye automáticamente antes de arrancar; no abre ni modifica la base durante esa comprobación. La reparación requiere conexión para descargar el binario o herramientas C/C++ si debe compilarse. Si falla, el comando se detiene con el error en lugar de dejar solo la web levantada por un fallo nativo. `pnpm dev` ejecuta el mismo flujo. Mantén la terminal abierta y usa Ctrl+C para detenerlo. No ejecutes dos instancias en los mismos puertos.
+
+En desarrollo con proveedor `local` y API enlazada a `127.0.0.1` o `::1`, no se aplican límites de peticiones, incluido el acceso de desarrollo. En producción, con LDAP o fuera de loopback, se conservan los límites globales y de login. Sesión, roles, origen y CSRF siguen siendo obligatorios.
 
 Los usuarios nuevos tienen rol `USER`. Tras entrar por primera vez, opcionalmente promociona la cuenta desde otra terminal:
 
@@ -112,6 +116,16 @@ USER abre sus tickets; TECHNICIAN y ADMIN abren sus resúmenes de atención real
 **Resolución real:** el técnico responsable o un administrador puede resolver desde el panel de atención. El solicitante puede entonces cerrar o reabrir desde su portal. No existe un endpoint de depuración ni un botón de resolución simulada.
 
 Las notas internas, metadatos de personal y relaciones de tareas nunca se incluyen en las respuestas públicas. El historial solo permite tipos públicos y estados conocidos; no devuelve el JSON bruto ni la identidad del actor interno. Las notificaciones de alta se guardan para administradores activos distintos del solicitante; se visualizan ahora en la campana y la página personal de notificaciones.
+
+## Bandeja de tickets y asignaciones propias
+
+El detalle de **Mis solicitudes**, **Todos los tickets** y **Mis tickets** incluye un **chat en vivo** entre el solicitante y el personal autorizado, con historial guardado en SQLite. Se reutiliza el WebSocket de la sesión y la API protegida. Las notas internas permanecen privadas y los tickets cerrados son de solo lectura. [Uso y límites del chat](docs/ticket-chat.md).
+
+En el sidebar de ADMIN y TECHNICIAN, **Bandeja de tickets** despliega **Todos los tickets** y **Mis tickets**. Esta última muestra los asignados a la cuenta de la sesión, con filtros y paginación del servidor dentro de su alcance autorizado. Rutas directas: `/admin/tickets/mine` y `/staff/tickets/mine`.
+
+**Mis solicitudes** sigue siendo el portal de tickets creados por ti, no tus asignaciones. El desplegable admite teclado, sidebar plegado y menú móvil. Ver [verificación](docs/verification/assigned-tickets.md).
+
+Ambas bandejas incluyen búsqueda con pausa al escribir, filtros de estado/prioridad, **Más filtros** para departamento/categoría/responsable y etiquetas para quitar filtros individualmente. Los totales y la paginación respetan los filtros del servidor. Todos los selectores de la aplicación utilizan shadcn/ui sobre Radix, también en formularios y diálogos; ver [evidencia visual](docs/verification/selects-ticket-inbox.md).
 
 ## Kanban privado (fase 6)
 
@@ -221,3 +235,18 @@ Consulta [las decisiones y verificaciones del rediseño](docs/design.md).
 ### Vistas de tareas
 
 Los tableros internos ofrecen vista **Tablero** y **Lista**, filtros combinables, ordenación y categorías privadas por tablero. Consulta [uso y permisos](docs/kanban-views.md) y [verificación local](docs/verification/kanban-views.md).
+
+### Estado de servicios universitarios
+
+Sidebar **Estado de servicios**: catálogo para usuarios y técnicos; administración
+puede crear servicios, informar estados y gestionar notas públicas o internas
+(solo ADMIN). Tickets con vínculo opcional al servicio y acceso propio respetado.
+No hay sondeos automáticos ni servicios de ejemplo precargados.
+Ver [uso y permisos](docs/service-status.md).
+
+### Planificación del trabajo
+
+Los tableros incorporan fechas límite y señalización de atrasos, subtareas y
+bloqueos informativos, plantillas reutilizables con checklist y vista Calendario
+con agenda móvil y reparto de entregas por responsable. Todo se guarda en SQLite
+con permisos del tablero. Ver [planificación](docs/task-planning.md).

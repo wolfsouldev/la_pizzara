@@ -1,0 +1,21 @@
+$kind: http-request
+description: EDIT de tarea activa; permite retirar predecesora archivada. Auditada
+  y transaccional.
+url: '{{baseUrl}}/tasks/{{taskId}}/dependencies/{{blockingTaskId}}'
+method: DELETE
+headers:
+- key: Accept
+  value: application/json
+- key: Content-Type
+  value: application/json
+- key: Origin
+  value: '{{origin}}'
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+auth:
+  type: noauth
+order: 2000
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: pm.test('HTTP 204', () => pm.response.to.have.status(204));

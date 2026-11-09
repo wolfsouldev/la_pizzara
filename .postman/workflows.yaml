@@ -2,3 +2,7 @@ workflows:
   syncSpecToCollection:
     - spec: ../postman/specs/platform.openapi.json
       collection: ../postman/collections/University Phase 8
+    - spec: ../../../../../tmp/pizzara-services-qa/contract.openapi.json
+      collection: ../postman/collections/University services
+    - spec: ../../../../../tmp/pizzara-planning-qa/contract.openapi.json
+      collection: ../postman/collections/Board planning

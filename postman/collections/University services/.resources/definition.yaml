@@ -1,0 +1,34 @@
+$kind: collection
+description: Generada desde el subconjunto de servicios del contrato v1.11.0. Ejecución
+  manual autorizada con sesión/cookie real, CSRF e IDs existentes; no ejecutar escrituras
+  sobre datos institucionales. Notas internas solo ADMIN. Completar variables antes
+  de escribir. Sin credenciales guardadas.
+variables:
+- key: csrfToken
+  value: ''
+- key: id
+  value: ''
+- key: noteId
+  value: ''
+- key: ticketId
+  value: ''
+- key: serviceName
+  value: ''
+- key: serviceDescription
+  value: ''
+- key: noteBody
+  value: ''
+- key: baseUrl
+  value: http://127.0.0.1:3000/api/v1
+- key: origin
+  value: http://localhost:5173
+- key: serviceStatus
+  value: UNKNOWN
+- key: noteVisibility
+  value: INTERNAL
+- key: serviceIdOrNull
+  value: 'null'
+- key: servicePatch
+  value: '{}'
+- key: serviceUrlOrNull
+  value: 'null'

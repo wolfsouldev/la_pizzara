@@ -1,0 +1,1 @@
+ALTER TABLE `university_services` ADD `url` text;

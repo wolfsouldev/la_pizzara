@@ -6,12 +6,13 @@ import { AuditRepository } from '../../database/repositories/audit.repository';
 import { DatabaseUnitOfWork } from '../../database/unit-of-work';
 import { TicketAccessPolicy } from '../../common/policies/ticket-access.policy';
 import { PaginatedResult } from '../../common/pagination';
+import { TicketRealtimeService } from '../notifications/ticket-realtime.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import type { User, Ticket } from '../../database/schema';
 const transitions: Record<TicketStatus, readonly TicketStatus[]> = { OPEN: ['ASSIGNED', 'IN_PROGRESS'], ASSIGNED: ['IN_PROGRESS'], IN_PROGRESS: ['WAITING_USER', 'RESOLVED'], WAITING_USER: ['IN_PROGRESS', 'RESOLVED'], RESOLVED: ['CLOSED', 'OPEN'], CLOSED: [] };
 @Injectable()
 export class StaffTicketsService {
-  constructor(private readonly staff: StaffTicketsRepository, private readonly tickets: TicketsRepository, private readonly audit: AuditRepository, private readonly unit: DatabaseUnitOfWork, private readonly policy: TicketAccessPolicy, private readonly notifications: NotificationsService) {}
+  constructor(private readonly staff: StaffTicketsRepository, private readonly tickets: TicketsRepository, private readonly audit: AuditRepository, private readonly unit: DatabaseUnitOfWork, private readonly policy: TicketAccessPolicy, private readonly notifications: NotificationsService, private readonly realtime: TicketRealtimeService) {}
   list(user: User, q: StaffTicketList) { this.policy.assertStaff(user); return new PaginatedResult(this.staff.list(user, q), q); }
   options(user: User) { this.policy.assertStaff(user); return this.staff.options(user); }
   private allowed(user: User, t: Ticket): TicketStatus[] {
@@ -24,8 +25,9 @@ export class StaffTicketsService {
   }
   comments(user: User, id: string, q: TicketCommentsQuery) { this.policy.requireStaff(user, id); return new PaginatedResult(this.staff.comments(user, id, q), q); }
   events(user: User, id: string, q: TicketCommentsQuery) { this.policy.requireStaff(user, id); return new PaginatedResult(this.staff.events(user, id, q), q); }
-  private record(user: User, id: string, event: Parameters<TicketsRepository['event']>[2], action: string, now: number, metadata: Record<string, unknown>) {
-    this.tickets.event(id, user.id, event, now, metadata); this.audit.record(user.id, action, 'ticket', id, metadata);
+  private record(user: User, id: string, event: Parameters<TicketsRepository['event']>[2], action: string, now: number, metadata: Record<string, unknown>, publicChange = true) {
+    const eventId = this.tickets.event(id, user.id, event, now, metadata); this.audit.record(user.id, action, 'ticket', id, metadata);
+    this.realtime.afterEvent(id, eventId, publicChange);
   }
   status(user: User, id: string, status: TicketStatus) {
     return this.unit.run(() => {
@@ -77,7 +79,7 @@ export class StaffTicketsService {
       const { ticket: t } = this.policy.requireStaff(user, id); this.policy.assertEdit(user, t); const now = Date.now();
       const c = this.staff.addComment(id, user.id, input.body, input.visibility, now); this.staff.update(user, id, {}, now);
       // No comment bodies in event metadata or audit; internal notes never notify requesters.
-      this.record(user, id, 'COMMENT_ADDED', 'TICKET_COMMENT_ADDED', now, { visibility: input.visibility, commentId: c.id });
+      this.record(user, id, 'COMMENT_ADDED', 'TICKET_COMMENT_ADDED', now, { visibility: input.visibility, commentId: c.id }, input.visibility === 'PUBLIC');
       if (input.visibility === 'PUBLIC') this.notifications.ticketPublicReply(t, user.id, now);
       return { id: c.id, body: c.body, visibility: c.visibility, createdAt: c.createdAt, updatedAt: c.updatedAt, author: { id: user.id, displayName: user.displayName } };
     });

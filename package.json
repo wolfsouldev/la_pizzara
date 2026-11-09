@@ -2,9 +2,9 @@
   "name": "university-platform",
   "private": true,
   "packageManager": "pnpm@12.15.0",
-  "engines": { "node": ">=24 <25" },
+  "engines": { "node": ">=26.13.0 <27" },
   "scripts": {
-    "dev": "pnpm build && pnpm --parallel --filter @uni/shared --filter api --filter web dev",
+    "dev": "node scripts/prepare-dev.mjs && pnpm build && pnpm --parallel --filter @uni/shared --filter api --filter web dev",
     "build": "pnpm --filter @uni/shared build && pnpm --filter api build && pnpm --filter web build",
     "typecheck": "pnpm --filter @uni/shared build && pnpm -r typecheck"
   }

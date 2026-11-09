@@ -1,0 +1,33 @@
+$kind: http-request
+description: Solo ADMIN. Visibilidad explícita. Una nota interna nunca se devuelve
+  a TECHNICIAN o USER.
+url: '{{baseUrl}}/admin/services/:id/notes'
+method: POST
+headers:
+- key: Accept
+  value: application/json
+- key: Origin
+  value: '{{origin}}'
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+- key: Content-Type
+  value: application/json
+pathVariables:
+- key: id
+  value: '{{id}}'
+  disabled: false
+  description: '(Required) '
+body:
+  type: json
+  content: "{\n  \"body\": \"{{noteBody}}\",\n  \"visibility\": \"{{noteVisibility}}\"\
+    \n}"
+auth:
+  type: noauth
+settings: {}
+order: 2000
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: 'pm.test("HTTP 201", () => pm.response.to.have.status(201));
+
+    pm.test("Respuesta con data", () => pm.expect(pm.response.json()).to.have.property("data"));'

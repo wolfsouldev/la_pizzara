@@ -1,0 +1,29 @@
+$kind: http-request
+description: MANAGE del tablero activo. Copia título, descripción, prioridad y títulos
+  de checklist (máximo 100, todos sin completar al aplicar); no copia fechas absolutas,
+  conversaciones, responsables, subtareas, dependencias o tickets.
+url: '{{baseUrl}}/tasks/{{taskId}}/template'
+method: POST
+headers:
+- key: Accept
+  value: application/json
+- key: Content-Type
+  value: application/json
+- key: Origin
+  value: '{{origin}}'
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+body:
+  type: json
+  content: '{{templateSave}}'
+auth:
+  type: noauth
+order: 4000
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: 'pm.test(''HTTP 201'', () => pm.response.to.have.status(201));
+
+    pm.test(''Respuesta con datos reales'', () => { const body=pm.response.json();
+    pm.expect(body).to.have.property(''data''); pm.expect(body).not.to.have.property(''error'');
+    });'

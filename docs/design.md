@@ -79,3 +79,13 @@ ya construidas no se han reconstruido ni desplegado en este cambio visual:
 construir una nueva release según `deployment.md` para publicar estos cambios.
 Permanece el aviso de Vite de bundle JavaScript superior a 500 kB; no se ha
 ocultado ni se introdujeron cambios de arquitectura para este rediseño.
+
+## Selectores y bandeja de tickets · 2026-11-08
+
+- Select de shadcn/ui sobre Radix (`components/ui/select.tsx`), con tokens oscuros, indicador de selección, foco, opciones deshabilitadas, grupos y scroll. El popup se monta en portal por encima de los diálogos; respeta altura disponible y movimiento reducido.
+- `SelectInput` comparte la composición para filtros y controles locales. `FormSelect` usa `useController` de React Hook Form para mantener validación, foco, `setValue`, `reset` y campos nullable. El valor vacío de filtros sigue siendo `''` y la desasignación sigue enviando `null`; el identificador visual interno nunca es un valor de negocio.
+- Se sustituyeron los 39 selectores nativos de formularios, administración, tickets y Kanban. No se cambian checkboxes múltiples por un selector simple.
+- Todos los tickets y Mis tickets comparten una bandeja más compacta: navegación entre alcances, búsqueda con pausa de 250 ms, estado/prioridad visibles, filtros de equipo/categoría/responsable desplegables, etiquetas extraíbles y limpieza global. Los filtros y totales siguen siendo del servidor, no de la página visible.
+- Tabla con mejor jerarquía entre número/título, solicitante, equipo, estado, prioridad y responsable; scroll horizontal local en móvil. Los conteos proceden de la respuesta real, sin métricas decorativas.
+
+Ver evidencia y límites en `verification/selects-ticket-inbox.md`.

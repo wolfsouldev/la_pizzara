@@ -1,0 +1,26 @@
+$kind: http-request
+description: VIEW; alcance privado del tablero. Sin plantillas globales.
+url: '{{baseUrl}}/boards/{{boardId}}/templates?page=1&limit=20'
+method: GET
+headers:
+- key: Accept
+  value: application/json
+queryParams:
+- key: page
+  value: '1'
+- key: limit
+  value: '20'
+auth:
+  type: noauth
+order: 1000
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: 'pm.test(''HTTP 200'', () => pm.response.to.have.status(200));
+
+    pm.test(''Respuesta con datos reales'', () => { const body=pm.response.json();
+    pm.expect(body).to.have.property(''data''); pm.expect(body).not.to.have.property(''error'');
+    });
+
+    pm.test(''Plantillas paginadas'', () => { const d=pm.response.json(); pm.expect(d.data).to.be.an(''array'');
+    pm.expect(d.meta.total).to.be.a(''number''); });'

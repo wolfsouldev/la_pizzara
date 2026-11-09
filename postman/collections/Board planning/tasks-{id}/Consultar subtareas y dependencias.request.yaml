@@ -1,0 +1,32 @@
+$kind: http-request
+description: VIEW del tablero. Relaciones del mismo tablero, paginadas e incluidas
+  archivadas. Nunca portal USER.
+url: '{{baseUrl}}/tasks/{{taskId}}/relations?subtasksPage=1&blockedByPage=1&blocksPage=1&limit=20'
+method: GET
+headers:
+- key: Accept
+  value: application/json
+queryParams:
+- key: subtasksPage
+  value: '1'
+- key: blockedByPage
+  value: '1'
+- key: blocksPage
+  value: '1'
+- key: limit
+  value: '20'
+auth:
+  type: noauth
+order: 1000
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: 'pm.test(''HTTP 200'', () => pm.response.to.have.status(200));
+
+    pm.test(''Respuesta con datos reales'', () => { const body=pm.response.json();
+    pm.expect(body).to.have.property(''data''); pm.expect(body).not.to.have.property(''error'');
+    });
+
+    pm.test(''Relaciones paginadas'', () => { const d=pm.response.json().data; for(const
+    k of [''subtasks'',''blockedBy'',''blocks'']) { pm.expect(d[k].data).to.be.an(''array'');
+    pm.expect(d[k].meta.total).to.be.a(''number''); } });'

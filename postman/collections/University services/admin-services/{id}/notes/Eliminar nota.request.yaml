@@ -1,0 +1,32 @@
+$kind: http-request
+description: Solo ADMIN. Comprueba pertenencia de nota al servicio; auditado.
+url: '{{baseUrl}}/admin/services/:id/notes/:noteId'
+method: DELETE
+headers:
+- key: Accept
+  value: application/json
+- key: Origin
+  value: '{{origin}}'
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+- key: Content-Type
+  value: application/json
+pathVariables:
+- key: id
+  value: '{{id}}'
+  disabled: false
+  description: '(Required) '
+- key: noteId
+  value: '{{noteId}}'
+  disabled: false
+  description: '(Required) '
+auth:
+  type: noauth
+settings: {}
+order: 3000
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: 'pm.test("HTTP 200", () => pm.response.to.have.status(200));
+
+    pm.test("Respuesta con data", () => pm.expect(pm.response.json()).to.have.property("data"));'

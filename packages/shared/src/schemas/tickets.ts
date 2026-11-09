@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ticketStatuses, priorities } from '../constants';
 import { pageSchema } from './administration';
 
-export const ticketCreateSchema = z.strictObject({ categoryId: z.uuid(), title: z.string().trim().min(3, 'Escribe al menos 3 caracteres').max(200), description: z.string().trim().min(10, 'Describe el problema con al menos 10 caracteres').max(10000) });
+export const ticketCreateSchema = z.strictObject({ categoryId: z.uuid(), serviceId: z.uuid().nullable().optional(), title: z.string().trim().min(3, 'Escribe al menos 3 caracteres').max(200), description: z.string().trim().min(10, 'Describe el problema con al menos 10 caracteres').max(10000) });
 export const ticketCommentCreateSchema = z.strictObject({ body: z.string().trim().min(1, 'Escribe tu respuesta').max(5000) });
 export const ticketListSchema = z.strictObject({ page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(100).default(20), search: z.string().trim().max(200).optional(), status: z.enum(ticketStatuses).optional() });
 export const ticketCommentsQuerySchema = ticketListSchema.omit({ search: true, status: true });

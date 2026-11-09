@@ -397,3 +397,104 @@ En aquella entrega no se habían implementado autenticación local/LDAP, sesione
 - Nueva migración Drizzle 0007 aplicada con respaldo previo. Sin cambios en datos de negocio anteriores.
 - Arrastre probado con filtros y tareas ocultas, permisos VIEW/EDIT/MANAGE y formularios conectados; ajuste responsive de acciones.
 - Build/typecheck/migraciones/lint correctos. Detalles en `docs/kanban-views.md` y `docs/verification/kanban-views.md`.
+
+## Actualización de runtime y entrada de desarrollo · 2026-11-08
+
+A petición expresa del usuario, la referencia actual pasa de Node 24 a **Node
+26.13.0 LTS**, conservando pnpm, dependencias del lockfile, SQLite y arquitectura.
+Las verificaciones anteriores con Node 24 son históricas y no se reescriben.
+
+- `.node-version`, `.nvmrc`, engines y Dockerfiles alineados a Node 26.
+- Un solo comando desde raíz: **`npm run dev`**, sin prefijos ni gestor de Node.
+- Preflight comprueba runtime y addon SQLite sin abrir la base; reconstruye solo
+  `better-sqlite3` si su binario falta o corresponde a otro ABI. Si no puede
+  prepararlo, detiene el arranque antes de levantar los servicios.
+- Build completo y tipado del monorepo comprobados con Node 26.13.0.
+- Arranque real con el comando anterior: Nest/API 3000 y Vite 5173 responden HTTP
+  200; `/api/v1/auth/csrf` a través del proxy responde 200 con proveedor local y
+  acceso de desarrollo disponible. No se probó login AD ni despliegue institucional.
+- Se reconstruyó el addon para ABI147 sin actualizar versiones del lockfile ni
+  ejecutar migraciones o escrituras de negocio. Los avisos PURE de Zod y bundle
+  >500 kB siguen siendo no fatales.
+- Las nuevas imágenes Docker no se han construido ni desplegado en esta ronda.
+
+La comprobación del addon usa un proceso hijo nuevo antes/después de la reparación:
+recargar en el mismo proceso un addon que falló `dlopen` y fue sustituido en disco
+provocó `Module did not self-register`; la comprobación aislada evita ese estado.
+
+## Sin throttling en desarrollo local · 2026-11-08
+
+Por petición del usuario, se omiten los límites de peticiones cuando coinciden
+`NODE_ENV=development`, `AUTH_PROVIDER=local` y `APP_HOST=127.0.0.1` o `::1`.
+Incluye el límite global y los decoradores de login/acceso de desarrollo. En
+producción, con LDAP o con escucha no-loopback se conservan. No se omiten sesión,
+roles, origen ni CSRF. Documentado en README y descripción OpenAPI, sin cambiar
+rutas/esquemas ni añadir suites.
+
+Verificación: build de API correcto; predicado real del módulo devuelve true para
+local IPv4/IPv6 y false para producción/LDAP/LAN. API local real: 130 GET health
+respondieron 200, y siete POST de acceso de desarrollo sin CSRF respondieron 403,
+ninguno 429. No se crearon sesiones ni se hicieron escrituras de negocio; no se
+arrancaron/detuvieron procesos del usuario. La comprobación de producción es del
+predicado de configuración, no un despliegue ni un login AD institucional.
+
+## Bandeja desplegable y Mis tickets · 2026-11-08
+
+- Sidebar de personal/administración: **Bandeja de tickets → Todos los tickets / Mis tickets**; apertura con teclado, indicador de ruta activa y navegación móvil.
+- Mis tickets usa el ID de sesión como `assignedToId` en la API existente, conservando alcance de permisos, filtros y paginación del servidor. No permite cambiar el responsable desde esta vista ni lanza una consulta general mientras falta la sesión.
+- Mis solicitudes permanece separado como portal del solicitante. Sin cambios de API, esquema o migraciones.
+- Build web y `git diff --check` correctos. Chromium con API/SQLite aisladas: técnico ve su ticket asignado, administrador sin asignaciones no lo ve, recarga conserva la ruta, menú funciona con teclado/sidebar plegado/móvil y sin errores JavaScript. Evidencia y límites en `docs/verification/assigned-tickets.md`.
+
+## Selectores shadcn/ui y bandeja moderna · 2026-11-08
+
+- Sustituidos los 39 selectores nativos por Select shadcn/Radix con presentación oscura compartida. Integración controlada con RHF sin eventos simulados; conserva grupos, opciones inactivas, validación, resets y valores nullable.
+- Todos los tickets y Mis tickets: filtros compactos, búsqueda con debounce, filtros avanzados desplegables, etiquetas extraíbles, limpieza global, resultados y tabla rediseñados. Sin cambios de API ni persistencia.
+- Añadido únicamente `@radix-ui/react-select@2.4.1` y sus dependencias necesarias al lockfile; no actualizaciones generales.
+- Tipado del monorepo y build web correctos. Revisión de navegador con API y SQLite aisladas: filtros reales, formularios persistidos, desasignación null, reset de categoría/color, cancelación de rol, selección en diálogo, teclado y móvil. Sin nuevas suites ni datos de revisión en la base habitual. Detalles en `docs/verification/selects-ticket-inbox.md`.
+
+## Chat persistente y en vivo por ticket · 2026-11-08
+
+- Chat compartido entre portal propio y detalle interno, con burbujas, fechas, notas privadas diferenciadas, historial anterior y borradores en memoria. Reutiliza los comentarios existentes, sin migraciones.
+- Señal `tickets:changed` sin payload sobre el mismo Socket.IO, verificada contra evento persistido, sesión y alcance actual; recuperación HTTP con permisos y CSRF en escrituras. Notas internas no despiertan al solicitante sin acceso de personal.
+- Reconciliación tras conectar/reconectar y cada 30 segundos. Lecturas de detalle/comentarios/eventos no renuevan la inactividad de sesión. Cierre propagado deja el chat de solo lectura.
+- API y web compilan; typecheck del monorepo correcto. OpenAPI 1.9 documenta la extensión WebSocket; lint sintáctico sin violaciones. La colección REST existente se reutilizó, sin crear suite ni publicar nada.
+- Dos sesiones reales en Chromium sobre copia aislada: intercambio bidireccional en ~0,17 s en la ejecución medida, persistencia tras recarga/reinicio de API, privacidad, paginación sin duplicados, mantenimiento del borrador y cierre/CSRF/permisos comprobados. Rollback real no emite señal. Ver `docs/verification/ticket-chat.md`.
+- Por la instrucción local de API, `postman skills status` detectó versiones atrasadas y `postman skills update` actualizó solo api-engineer/workspaces. No se actualizó la CLI ni se inició sesión/publicó en Postman.
+
+## Catálogo de estado de servicios · 2026-11-08
+
+- Catálogo oscuro adaptable por tarjetas, búsqueda/filtros y fichas enlazables. Estados informados manualmente; no se simula monitorización ni disponibilidad. Vacío inicialmente, sin servicios sembrados.
+- ADMIN administra servicios, archivo/restauración y notas públicas/internas. USER y TECHNICIAN nunca reciben notas internas del servicio; controles de rol y proyecciones explícitas en API.
+- Vínculo opcional de un servicio por ticket, seleccionable en alta/detalle y desde el catálogo. Conserva propiedad/alcance/responsabilidad, bloquea cambios en cerrado y vínculos nuevos a archivados; auditoría transaccional.
+- Drizzle 0008 versionada, probada y repetida en copia aislada antes de aplicarse localmente, con copia consistente previa. Sin datos de QA en la base habitual.
+- Contrato v1.10 y colección manual de 14 peticiones; sin publicación externa. Detalles funcionales en `docs/service-status.md` y evidencia/límites en `docs/verification/service-status.md`.
+- Cierre: typecheck y build completos correctos; OpenAPI sin violaciones, colección sin errores, ejecución pública Postman **3 peticiones / 7 aserciones / 0 fallos**. Chromium ADMIN/USER/TECH comprobó formularios, privacidad, responsabilidad/alcance, archivo, recarga, teclado y móvil; integridad/FK correctas en ambas SQLite. Se corrigió una subconsulta correlacionada de preview detectada visualmente y se volvió a verificar contra una nota interna más reciente. Sin validación institucional ni despliegue Docker.
+
+## Servicios primero y URL de acceso · 2026-11-08
+
+- Retirado el bloque introductorio grande del catálogo; cabecera centrada y filtros compactos shadcn. Tarjetas en tres columnas amplias, estados protagonistas con texto/icono/color y notas compactas. Primera tarjeta/estado visibles sin scroll en escritorio y móvil revisados.
+- URL opcional por servicio, editable por ADMIN, con Acceder en tarjeta y URL completa en ficha; apertura en pestaña nueva sin opener/referer. Solo HTTP/HTTPS absolutos, sin credenciales y hasta 2048 caracteres; no hay peticiones del servidor a la URL. PATCH omitido conserva y null elimina.
+- Drizzle 0009 (columna nullable), aplicada en copia y repetida antes de la base local, con Online Backup privado previo. No se rellenaron direcciones ni datos ficticios en la base habitual.
+- Build API/web y typecheck completo correctos. Chromium USER/ADMIN: filtros, URL/recarga, teclado, fichas, URL persistida, apertura real y móvil sin desbordamiento. URLs inválidas 422; sin CSRF y USER editando 403. Postman público: 3 peticiones / 8 aserciones / 0 fallos; lint sin violaciones. Evidencia: `docs/verification/service-status-ui.md`. Sin validación institucional ni nuevas suites.
+
+## Planificación completa de tareas · 2026-11-08
+
+- Fechas límite existentes ahora visibles con señales de vencida/hoy/completada;
+  filtros combinables de fechas y bloqueos, sin marcar completadas como atrasadas.
+- Subtareas multinivel y dependencias persistentes del mismo tablero, sin ciclos,
+  con progreso, listas paginadas e historial. Bloqueos informativos, no restricción
+  automática de movimientos. Archivo no equivale a completar.
+- Plantillas por tablero con gestión MANAGE y uso EDIT; título/descripción/prioridad,
+  plazo opcional y hasta 100 elementos de checklist. Guardado desde tarea completa,
+  copia transaccional sin conversaciones/tickets ni elementos ya completados.
+- Vista Calendario con URL/mes/filtros, entregas por día, agenda móvil, tareas sin
+  fecha y reparto mensual por responsable (conteos reales, no horas estimadas).
+- Drizzle 0010: tres tablas nuevas, respaldo consistente previo, prueba aislada y
+  aplicación local sin alterar las 26 tablas previas de negocio. Nuevas tablas
+  vacías en la base habitual; integridad y FKs correctas.
+- Typecheck/build completos correctos; OpenAPI 1.12 sin errores de sintaxis;
+  colección manual de diez peticiones. Postman: dos lecturas, seis aserciones,
+  cero fallos. HTTP/Chromium con sesiones ADMIN/USER/VIEW/EDIT/MANAGE y SQLite real
+  aislada. Ver `docs/task-planning.md` y `docs/verification/task-planning.md`.
+- Sin suites añadidas, publicación Postman, commits, despliegue ni validación AD.
+  Se mantiene el aviso de bundle Vite grande.

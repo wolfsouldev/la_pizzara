@@ -1,4 +1,4 @@
-FROM node:24.15.0-bookworm-slim AS build
+FROM node:26.13.0-bookworm-slim AS build
 WORKDIR /app
 RUN npm install --global pnpm@12.15.0
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./

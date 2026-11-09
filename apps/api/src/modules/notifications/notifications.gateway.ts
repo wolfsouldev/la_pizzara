@@ -9,8 +9,9 @@ import { z } from 'zod';
 import { env } from '../../config/environment';
 import { SessionService } from '../auth/session.service';
 import { NotificationRealtimeService } from './notification-realtime.service';
+import { TicketRealtimeService } from './ticket-realtime.service';
 interface ClientEvents { [key:string]:(...args:unknown[])=>void }
-interface ServerEvents { 'notifications:changed':()=>void }
+interface ServerEvents { 'notifications:changed':()=>void; 'tickets:changed':()=>void }
 interface SocketData { userId:string; token:string; csrfToken:string }
 type Client=Socket<ClientEvents,ServerEvents,Record<string,never>,SocketData>;
 type RealtimeServer=Server<ClientEvents,ServerEvents,Record<string,never>,SocketData>;
@@ -21,8 +22,9 @@ export class NotificationsGateway implements OnGatewayInit<RealtimeServer>,OnGat
   private server?:RealtimeServer;
   private timer?:ReturnType<typeof setInterval>;
   private unsubscribe?:()=>void;
+  private unsubscribeTickets?:()=>void;
   private checking=false;
-  constructor(private readonly sessions:SessionService,private readonly realtime:NotificationRealtimeService,private readonly adapter:HttpAdapterHost) {}
+  constructor(private readonly sessions:SessionService,private readonly realtime:NotificationRealtimeService,private readonly adapter:HttpAdapterHost,private readonly tickets:TicketRealtimeService) {}
   private secure(req:IncomingMessage) {
     if((req.socket as TLSSocket).encrypted)return true;
     const app=this.adapter.httpAdapter.getInstance<Application>();const trust:unknown=app.get('trust proxy fn');
@@ -41,6 +43,7 @@ export class NotificationsGateway implements OnGatewayInit<RealtimeServer>,OnGat
       socket.data={userId:context.user.id,token,csrfToken:auth.data.csrfToken};next();
     })().catch(()=>next(new Error('Sesión no válida')));});
     this.unsubscribe=this.realtime.subscribe(userId=>{void this.wake(userId);});
+    this.unsubscribeTickets=this.tickets.subscribe(change=>{void this.wakeTicket(change);});
     this.timer=setInterval(()=>{if(this.checking)return;this.checking=true;void Promise.all([...server.sockets.sockets.values()].map(client=>this.valid(client))).finally(()=>{this.checking=false;});},30000);this.timer.unref();
   }
   handleConnection(client:Client) {
@@ -50,11 +53,17 @@ export class NotificationsGateway implements OnGatewayInit<RealtimeServer>,OnGat
     client.onAny(()=>client.disconnect(true));
   }
   private async valid(client:Client) {
-    try { const context=await this.sessions.resolveRealtime(client.data.token,client.data.csrfToken,client.handshake.headers.origin,this.secure(client.request));if(context&&context.user.id===client.data.userId&&client.connected)return true; }catch{ /* Directory unavailable must fail closed. */ }
-    client.disconnect(true);return false;
+    try { const context=await this.sessions.resolveRealtime(client.data.token,client.data.csrfToken,client.handshake.headers.origin,this.secure(client.request));if(context&&context.user.id===client.data.userId&&client.connected)return context.user; }catch{ /* Directory unavailable must fail closed. */ }
+    client.disconnect(true);return undefined;
   }
   private async wake(userId:string) {
     for(const client of this.server?.sockets.sockets.values()??[])if(client.data.userId===userId&&await this.valid(client))client.emit('notifications:changed');
   }
-  onModuleDestroy() { if(this.timer)clearInterval(this.timer);this.unsubscribe?.();for(const client of this.server?.sockets.sockets.values()??[])client.disconnect(true);connections=()=>0; }
+  private async wakeTicket(change:Parameters<TicketRealtimeService['canReceive']>[1]) {
+    for(const client of this.server?.sockets.sockets.values()??[]) {
+      const user=await this.valid(client);
+      if(user&&this.tickets.canReceive(user,change))client.emit('tickets:changed');
+    }
+  }
+  onModuleDestroy() { if(this.timer)clearInterval(this.timer);this.unsubscribe?.();this.unsubscribeTickets?.();for(const client of this.server?.sockets.sockets.values()??[])client.disconnect(true);connections=()=>0; }
 }

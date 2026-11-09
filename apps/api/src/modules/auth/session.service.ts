@@ -32,8 +32,9 @@ export class SessionService {
     if (env.NODE_ENV === 'production' && !req.secure) return;
     const token = this.token(req);
     if (!token) return;
-    const background=req.method==='GET'&&/^\/api\/v1\/(?:auth\/me|notifications(?:\/unread-count)?|(?:staff|admin)\/dashboard)\/?$/.test(req.path);
-    return this.resolveToken(token,!background);
+    const background=req.method==='GET'&&(/^\/api\/v1\/(?:auth\/me|notifications(?:\/unread-count)?|(?:staff|admin)\/dashboard)\/?$/.test(req.path)||/^\/api\/v1\/(?:staff\/)?tickets\/[a-f0-9-]{36}(?:\/(?:comments|events|service))?\/?$/i.test(req.path));
+    const catalogBackground = req.method === 'GET' && /^\/api\/v1\/(?:admin\/)?services(?:\/[a-f0-9-]{36}(?:\/notes)?)?\/?$/i.test(req.path);
+    return this.resolveToken(token, !background && !catalogBackground);
   }
   async resolveRealtime(token:string,csrfToken:string,origin:string|undefined,secure:boolean):Promise<SessionContext|undefined> {
     if(origin!==env.APP_ORIGIN||(env.NODE_ENV==='production'&&!secure)||!(/^[a-f0-9]{64}$/.test(token)))return;

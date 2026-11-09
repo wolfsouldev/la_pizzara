@@ -1,3 +1,4 @@
+import { FormSelect, SelectOption } from '@/components/common/select-input';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,7 +28,7 @@ function LabelForm({ boardId, label, done }: { boardId: string; label?: BoardLab
   return <form className="space-y-4 rounded-lg border border-border bg-muted/30 p-4" onSubmit={form.handleSubmit(body => mutation.mutate({ path: `/boards/${boardId}/labels${label ? `/${label.id}` : ''}`, method: label ? 'PATCH' : 'POST', body }))}>
     <fieldset disabled={mutation.isPending} className="grid gap-4 sm:grid-cols-[1fr_140px]">
       <Field id="label-name" label={label ? 'Editar categoría' : 'Nueva categoría'} error={form.formState.errors.name?.message}><input id="label-name" placeholder="Por ejemplo, Infraestructura" maxLength={40} {...form.register('name')}/></Field>
-      <Field id="label-color" label="Color" error={form.formState.errors.color?.message}><select id="label-color" {...form.register('color')}>{labelColors.map(c => <option key={c} value={c}>{colorNames[c]}</option>)}</select></Field>
+      <Field id="label-color" label="Color" error={form.formState.errors.color?.message}><FormSelect id="label-color" control={form.control} name="color">{labelColors.map(c => <SelectOption key={c} value={c}>{colorNames[c]}</SelectOption>)}</FormSelect></Field>
     </fieldset>
     <div className="flex gap-2"><Button type="submit" disabled={mutation.isPending}>{label ? 'Guardar categoría' : 'Crear categoría'}</Button>{label && <Button variant="ghost" type="button" onClick={done}>Cancelar</Button>}</div><Notice error={mutation.error}/>
   </form>;

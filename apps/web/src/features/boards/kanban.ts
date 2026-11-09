@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
-import { pageSchema, boardLabelSchema, boardSchema, boardDetailSchema, boardMemberSchema, boardCandidateSchema, taskSchema, taskDetailSchema, taskCommentSchema, checklistItemSchema, taskEventSchema, type KanbanTask } from '@uni/shared';
+import { taskRelationsSchema, taskTemplateSchema, pageSchema, boardLabelSchema, boardSchema, boardDetailSchema, boardMemberSchema, boardCandidateSchema, taskSchema, taskDetailSchema, taskCommentSchema, checklistItemSchema, taskEventSchema, type KanbanTask } from '@uni/shared';
 import { api } from '@/lib/api-client';
 import { queryString } from '@/lib/query-string';
 export const boardTasksKey = (id: string, archived = false) => ['kanban', 'board-tasks', id, archived] as const;
@@ -27,3 +27,6 @@ export function optimisticMove(rows: KanbanTask[], id: string, columnId: string,
 }
 
 export function useBoardLabels(id: string) { return useQuery({ queryKey: ['kanban', 'labels', id], queryFn: ({ signal }) => allPages(`/boards/${id}/labels`, boardLabelSchema, signal) }); }
+
+export function useBoardTemplates(id: string, enabled = true) { return useQuery({ queryKey: ['kanban', 'templates', id], queryFn: ({ signal }) => allPages(`/boards/${id}/templates`, taskTemplateSchema, signal), enabled }); }
+export function useTaskRelations(id: string, pages: { subtasksPage: number; blockedByPage: number; blocksPage: number }) { return useQuery({ queryKey: ['kanban', 'relations', id, pages], queryFn: async () => taskRelationsSchema.parse((await api<unknown>(`/tasks/${id}/relations?${new URLSearchParams(Object.entries(pages).map(([k,v]) => [k,String(v)]))}`)).data) }); }

@@ -8,5 +8,5 @@ export function dateTime(value: number) { return new Intl.DateTimeFormat('es', {
 export function useMyTickets(values: { page: number; search: string; status: string }) {
   const qs = queryString(values); return useQuery({ queryKey: ['tickets', 'my', qs], queryFn: async () => pageSchema(ticketSummarySchema).parse(await api<unknown>(`/tickets/my?${qs}`)) });
 }
-export function useTicket(id: string, historyPage: number) { return useQuery({ queryKey: ['tickets', 'detail', id, historyPage], queryFn: async () => ticketDetailSchema.parse((await api<unknown>(`/tickets/${id}?historyPage=${historyPage}`)).data) }); }
+export function useTicket(id: string, historyPage: number) { return useQuery({ queryKey: ['tickets', 'detail', id, historyPage], refetchInterval: 30000, queryFn: async () => ticketDetailSchema.parse((await api<unknown>(`/tickets/${id}?historyPage=${historyPage}`)).data) }); }
 export function useTicketComments(id: string, page: number, enabled: boolean) { return useQuery({ queryKey: ['tickets', 'comments', id, page], enabled, queryFn: async () => pageSchema(publicTicketCommentSchema).parse(await api<unknown>(`/tickets/${id}/comments?page=${page}`)) }); }

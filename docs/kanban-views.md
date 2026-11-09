@@ -39,3 +39,24 @@ POST/PATCH de categoría reciben `name` y `color` (`violet`, `blue`, `green`, `a
 Contrato: `postman/specs/platform.openapi.json` v1.8. Colección manual adicional: `postman/collections/Kanban categories` (cuatro peticiones, sin mocks, ejemplos inventados ni scripts de tests). Configurar IDs reales y CSRF de sesión solo al ejecutarla; no lanzar escrituras indiscriminadamente.
 
 [Comprobaciones realizadas](verification/kanban-views.md).
+
+## Espacio de trabajo del tablero
+
+El detalle de cada tablero aprovecha todo el ancho disponible junto al sidebar
+(plegable) y el alto de ventana, sin el límite de ancho de las páginas de
+formularios. Las columnas se reparten el espacio y mantienen scroll horizontal
+local si no caben; las tareas tienen scroll vertical dentro de cada columna.
+La vista Lista conserva su cabecera al desplazar las filas.
+
+La búsqueda y el archivo permanecen visibles. **Filtros** abre/cierra los
+selectores y muestra cuántos están activos; cerrarlos no borra su selección ni
+cambia la URL. **Limpiar** elimina los filtros y la búsqueda. En móvil se compactan
+las acciones de configuración/categorías; sus iconos mantienen nombres accesibles.
+
+[Evidencia de esta mejora visual](verification/kanban-workspace.md).
+
+## Planificación
+
+El tablero incorpora vencimientos y filtros de atraso, subtareas/dependencias,
+plantillas de checklist y una tercera vista Calendario con reparto de entregas.
+Consultar [comportamiento, permisos y contrato](task-planning.md).

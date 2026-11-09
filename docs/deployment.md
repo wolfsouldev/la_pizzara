@@ -10,7 +10,7 @@
 - LDAPS válido con la CA pública y cuenta de lectura de mínimos permisos. Véase [Active Directory](active-directory.md).
 - Certificado web institucional **o** CA interna de Caddy distribuida como raíz confiable a clientes. No saltarse validación TLS.
 
-Las imágenes fijan Node 24.15.0 Debian bookworm y Caddy 2.11.7 Alpine; pnpm 12.15.0 y dependencias del lockfile. Build multietapa: no se montan repositorio, node_modules del host, .env ni certificados dentro de la imagen. La API ejecuta solo artefactos compilados/dependencias de producción, sin pnpm/tsx/gcc. El servidor de archivos web es otra instancia de Caddy, sin puertos publicados.
+Las imágenes fijan Node 26.13.0 LTS Debian bookworm y Caddy 2.11.7 Alpine; pnpm 12.15.0 y dependencias del lockfile. Build multietapa: no se montan repositorio, node_modules del host, .env ni certificados dentro de la imagen. La API ejecuta solo artefactos compilados/dependencias de producción, sin pnpm/tsx/gcc. El servidor de archivos web es otra instancia de Caddy, sin puertos publicados.
 
 ## 2. Preparar configuración y permisos
 

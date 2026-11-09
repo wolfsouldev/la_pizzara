@@ -1,0 +1,28 @@
+$kind: http-request
+description: Solo ADMIN. Nombre único ignorando mayúsculas. Estado inicial UNKNOWN;
+  sin datos ficticios.
+url: '{{baseUrl}}/admin/services'
+method: POST
+headers:
+- key: Accept
+  value: application/json
+- key: Origin
+  value: '{{origin}}'
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+- key: Content-Type
+  value: application/json
+body:
+  type: json
+  content: "{\n  \"name\": \"{{serviceName}}\",\n  \"description\": \"{{serviceDescription}}\"\
+    ,\n  \"status\": \"{{serviceStatus}}\",\n  \"url\": {{serviceUrlOrNull}}\n}"
+auth:
+  type: noauth
+settings: {}
+order: 2000
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: 'pm.test("HTTP 201", () => pm.response.to.have.status(201));
+
+    pm.test("Respuesta con data", () => pm.expect(pm.response.json()).to.have.property("data"));'

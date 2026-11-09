@@ -1,0 +1,23 @@
+$kind: http-request
+description: Autenticado. Estados informados manualmente, no sondeo. Solo activos.
+  Nunca notas internas.
+url: '{{baseUrl}}/services?page=1&limit=20'
+method: GET
+headers:
+- key: Accept
+  value: application/json
+queryParams:
+- key: page
+  value: '1'
+- key: limit
+  value: '20'
+auth:
+  type: noauth
+settings: {}
+order: 1000
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: 'pm.test("HTTP 200", () => pm.response.to.have.status(200));
+
+    pm.test("Respuesta con data", () => pm.expect(pm.response.json()).to.have.property("data"));'

@@ -1,0 +1,28 @@
+$kind: http-request
+description: EDIT; mismo tablero, sin autorreferencia o ciclos, padre nuevo no archivado.
+  null separa. No mueve ni completa tareas automáticamente.
+url: '{{baseUrl}}/tasks/{{taskId}}/parent'
+method: PATCH
+headers:
+- key: Accept
+  value: application/json
+- key: Content-Type
+  value: application/json
+- key: Origin
+  value: '{{origin}}'
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+body:
+  type: json
+  content: '{{parentPatch}}'
+auth:
+  type: noauth
+order: 2000
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: 'pm.test(''HTTP 200'', () => pm.response.to.have.status(200));
+
+    pm.test(''Respuesta con datos reales'', () => { const body=pm.response.json();
+    pm.expect(body).to.have.property(''data''); pm.expect(body).not.to.have.property(''error'');
+    });'

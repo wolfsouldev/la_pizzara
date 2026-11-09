@@ -1,0 +1,31 @@
+$kind: http-request
+description: Propietario exclusivamente, o personal con permiso de edición en /staff.
+  Cerrado 409; servicio archivado 409 para nuevo vínculo; null desvincula. Un servicio
+  por ticket; no cambia categoría o departamento. Auditada y transaccional.
+url: '{{baseUrl}}/tickets/:ticketId/service'
+method: PATCH
+headers:
+- key: Accept
+  value: application/json
+- key: Origin
+  value: '{{origin}}'
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+- key: Content-Type
+  value: application/json
+pathVariables:
+- key: ticketId
+  value: '{{ticketId}}'
+body:
+  type: json
+  content: '{ "serviceId": {{serviceIdOrNull}} }'
+auth:
+  type: noauth
+settings: {}
+order: 2000
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: 'pm.test("HTTP 200", () => pm.response.to.have.status(200));
+
+    pm.test("Respuesta con data", () => pm.expect(pm.response.json()).to.have.property("data"));'

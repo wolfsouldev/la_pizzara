@@ -1,0 +1,29 @@
+$kind: http-request
+description: EDIT, ambas activas del mismo tablero; sin duplicados ni ciclos. Bloqueo
+  informativo por predecesoras en columnas no completadas, incluidas archivadas; no
+  impide mover manualmente.
+url: '{{baseUrl}}/tasks/{{taskId}}/dependencies'
+method: POST
+headers:
+- key: Accept
+  value: application/json
+- key: Content-Type
+  value: application/json
+- key: Origin
+  value: '{{origin}}'
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+body:
+  type: json
+  content: '{{dependencyCreate}}'
+auth:
+  type: noauth
+order: 1000
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: 'pm.test(''HTTP 201'', () => pm.response.to.have.status(201));
+
+    pm.test(''Respuesta con datos reales'', () => { const body=pm.response.json();
+    pm.expect(body).to.have.property(''data''); pm.expect(body).not.to.have.property(''error'');
+    });'

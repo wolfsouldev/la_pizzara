@@ -7,6 +7,8 @@ import { NotificationsGateway } from './notifications.gateway';
 import { NotificationsRepository } from '../../database/repositories/notifications.repository';
 import { BoardsRepository } from '../../database/repositories/boards.repository';
 import { StaffTicketsRepository } from '../../database/repositories/staff-tickets.repository';
+import { TicketsRepository } from '../../database/repositories/tickets.repository';
+import { TicketRealtimeService } from './ticket-realtime.service';
 @Global()
-@Module({imports:[AuthModule],controllers:[NotificationsController],providers:[NotificationsService,NotificationsRepository,NotificationRealtimeService,NotificationsGateway,BoardsRepository,StaffTicketsRepository],exports:[NotificationsService]})
+@Module({imports:[AuthModule],controllers:[NotificationsController],providers:[NotificationsService,NotificationsRepository,NotificationRealtimeService,NotificationsGateway,BoardsRepository,StaffTicketsRepository,TicketsRepository,TicketRealtimeService],exports:[NotificationsService,TicketRealtimeService]})
 export class NotificationsModule {}

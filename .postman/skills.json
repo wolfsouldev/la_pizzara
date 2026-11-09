@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "origin": "remote",
   "source": "https://raw.githubusercontent.com/postmanlabs/postman-plugin/main/",
-  "fetchedAt": "2026-11-04T04:14:30.266Z",
-  "etag": "W/\"f56f71cec98bd561ca026124b131c29e848135f839f90149a731d069095cab66\"",
+  "fetchedAt": "2026-11-08T21:01:12.925Z",
+  "etag": "W/\"bb5932503765084ecf63f7db5f591efa2970d1ea8ef9e2bdfdc9361275360685\"",
   "skills": {
     "api-engineer": {
       "files": {
         "SKILL.md": {
-          "source": "dc3f8fd25a0d24ba836dc7a5ab1178ec5087d5141e9e45e14cfa353770bfd93a",
-          "written": "dc3f8fd25a0d24ba836dc7a5ab1178ec5087d5141e9e45e14cfa353770bfd93a"
+          "source": "816a35fee2b34adfb64383c6064d52659c7716c7ac03fbb24306fa0b4aeac0b7",
+          "written": "816a35fee2b34adfb64383c6064d52659c7716c7ac03fbb24306fa0b4aeac0b7"
         }
       }
     },
@@ -284,8 +284,8 @@
     "workspaces": {
       "files": {
         "SKILL.md": {
-          "source": "9f9c500e1123cae35e9f6baa3d8cf74af700a23232ddaa4f7a1e49ba873d97cf",
-          "written": "9f9c500e1123cae35e9f6baa3d8cf74af700a23232ddaa4f7a1e49ba873d97cf"
+          "source": "118c18eacf29aa5db1b572897a08f1385603c6a5654429be6e0b45a798a52b8c",
+          "written": "118c18eacf29aa5db1b572897a08f1385603c6a5654429be6e0b45a798a52b8c"
         }
       }
     }

@@ -1,0 +1,28 @@
+$kind: http-request
+description: MANAGE en tablero activo. Nombre único normalizado por tablero, máximo
+  100 plantillas; checklist máximo 100. No copia conversaciones, vínculos o responsables.
+url: '{{baseUrl}}/boards/{{boardId}}/templates'
+method: POST
+headers:
+- key: Accept
+  value: application/json
+- key: Content-Type
+  value: application/json
+- key: Origin
+  value: '{{origin}}'
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+body:
+  type: json
+  content: '{{templateCreate}}'
+auth:
+  type: noauth
+order: 2000
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: 'pm.test(''HTTP 201'', () => pm.response.to.have.status(201));
+
+    pm.test(''Respuesta con datos reales'', () => { const body=pm.response.json();
+    pm.expect(body).to.have.property(''data''); pm.expect(body).not.to.have.property(''error'');
+    });'

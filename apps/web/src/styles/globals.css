@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* One permanent theme, including Radix portals and native form fields. */
+/* One permanent theme, including Radix portals and form fields. */
 @theme {
   --font-sans: "Segoe UI Variable", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
   --color-background: #101114;
@@ -42,30 +42,34 @@
   ::selection { @apply bg-primary/25 text-foreground; }
   h1, h2, h3 { text-wrap: balance; }
   h1 { letter-spacing: -0.035em; }
-  input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+  input:not([type="checkbox"]):not([type="radio"]), textarea {
     @apply min-h-10 w-full min-w-0 rounded-lg border border-input bg-background px-3 py-2 text-sm font-normal text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25 disabled:cursor-not-allowed disabled:opacity-50;
   }
   textarea { resize: vertical; }
-  input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] { @apply border-destructive; }
+  input[aria-invalid="true"], textarea[aria-invalid="true"] { @apply border-destructive; }
   input[type="checkbox"], input[type="radio"] { @apply size-4 shrink-0 accent-primary; }
   label { @apply block text-sm font-medium text-foreground; }
-  label > input:not([type="checkbox"]):not([type="radio"]), label > select, label > textarea { @apply mt-2; }
+  label > input:not([type="checkbox"]):not([type="radio"]), label > [data-slot="select-trigger"], label > textarea { @apply mt-2; }
   button, a, summary, input[type="checkbox"], input[type="radio"] {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
-  button:not(:disabled), select, summary { cursor: pointer; }
+  button:not(:disabled), summary { cursor: pointer; }
   button:disabled { cursor: not-allowed; }
   fieldset { min-width: 0; }
-  option, optgroup { @apply bg-popover text-foreground; }
   input:-webkit-autofill { -webkit-text-fill-color: #edf0f4; box-shadow: 0 0 0 1000px #1d2026 inset; }
   @media (max-width: 767px) {
-    input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px; min-height: 44px; }
+    input:not([type="checkbox"]):not([type="radio"]), textarea { font-size: 16px; min-height: 44px; }
     button, [data-sidebar="trigger"], [data-sidebar="menu-button"], summary { min-height: 44px; }
     [data-sidebar="trigger"], summary[aria-label^="Notificaciones"] { min-width: 44px; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
   }
+}
+
+@keyframes select-enter {
+  from { opacity: 0; transform: translateY(-3px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 @layer components {
   .workspace-content { @apply mx-auto w-full max-w-[1440px] px-4 py-7 sm:px-7 lg:px-10 lg:py-9; }
@@ -76,4 +80,14 @@
     background-size: 44px 44px;
     mask-image: linear-gradient(to bottom, transparent, black 25%, black 75%, transparent);
   }
+}
+
+/* Session feedback: one entrance and a brief signal, never perpetual motion. */
+@keyframes session-status-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes session-status-signal {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }

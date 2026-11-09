@@ -6,9 +6,9 @@ import { queryString } from '@/lib/query-string';
 export const useStaffArea = () => useLocation().pathname.startsWith('/admin') ? '/admin' : '/staff';
 export function useStaffOptions() { return useQuery({ queryKey: ['staff', 'options'], queryFn: async () => staffOptionsSchema.parse((await api<unknown>('/staff/tickets/options')).data) }); }
 export function useStaffTickets(filters: Record<string, string | number | undefined>, enabled = true) { const q = queryString(filters); return useQuery({ enabled, queryKey: ['staff', 'tickets', q], queryFn: async () => pageSchema(staffTicketSummarySchema).parse(await api<unknown>(`/staff/tickets?${q}`)) }); }
-export function useStaffTicket(id: string) { return useQuery({ queryKey: ['staff', 'detail', id], queryFn: async () => staffTicketDetailSchema.parse((await api<unknown>(`/staff/tickets/${id}`)).data) }); }
+export function useStaffTicket(id: string) { return useQuery({ queryKey: ['staff', 'detail', id], refetchInterval: 30000, queryFn: async () => staffTicketDetailSchema.parse((await api<unknown>(`/staff/tickets/${id}`)).data) }); }
 export function useStaffComments(id: string, page: number, enabled: boolean) { return useQuery({ queryKey: ['staff', 'comments', id, page], queryFn: async () => pageSchema(staffCommentSchema).parse(await api<unknown>(`/staff/tickets/${id}/comments?page=${page}`)), enabled }); }
-export function useStaffEvents(id: string, page: number, enabled: boolean) { return useQuery({ queryKey: ['staff', 'events', id, page], queryFn: async () => pageSchema(staffEventSchema).parse(await api<unknown>(`/staff/tickets/${id}/events?page=${page}`)), enabled }); }
+export function useStaffEvents(id: string, page: number, enabled: boolean) { return useQuery({ queryKey: ['staff', 'events', id, page], refetchInterval: 30000, queryFn: async () => pageSchema(staffEventSchema).parse(await api<unknown>(`/staff/tickets/${id}/events?page=${page}`)), enabled }); }
 export function useTicketDashboard(area: string) { return useQuery({ refetchInterval: 30000, queryKey: ['staff', 'dashboard', area], queryFn: async () => ticketDashboardSchema.parse((await api<unknown>(`${area}/dashboard`)).data) }); }
 export function useStaffMutation(id: string, onSuccess?: () => void) {
   const client = useQueryClient();

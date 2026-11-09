@@ -39,8 +39,11 @@ export class TicketsRepository {
     return this.database.db.update(tickets).set({ ...patch, updatedAt: now }).where(ownership(id, requesterId)).returning().get()!;
   }
   event(ticketId: string, actorId: string, eventType: typeof ticketEvents.$inferInsert.eventType, now: number, metadata?: Record<string, unknown>) {
-    this.database.db.insert(ticketEvents).values({ id: randomUUID(), ticketId, actorId, eventType, metadata, createdAt: now }).run();
+    const id = randomUUID();
+    this.database.db.insert(ticketEvents).values({ id, ticketId, actorId, eventType, metadata, createdAt: now }).run();
+    return id;
   }
+  eventPersisted(ticketId: string, eventId: string) { return !!this.database.db.select({ id: ticketEvents.id }).from(ticketEvents).where(and(eq(ticketEvents.id, eventId), eq(ticketEvents.ticketId, ticketId))).get(); }
   publicHistory(id: string, requesterId: string, q: TicketCommentsQuery) {
     const where = and(ownership(id, requesterId), inArray(ticketEvents.eventType, [...publicTicketEventTypes]));
     return { rows: this.database.db.select({ id: ticketEvents.id, eventType: ticketEvents.eventType, metadata: ticketEvents.metadata, createdAt: ticketEvents.createdAt }).from(ticketEvents).innerJoin(tickets, eq(ticketEvents.ticketId, tickets.id))

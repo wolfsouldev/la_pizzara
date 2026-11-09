@@ -1,0 +1,20 @@
+$kind: http-request
+description: MANAGE, tablero activo. Conserva tareas creadas desde ella.
+url: '{{baseUrl}}/boards/{{boardId}}/templates/{{templateId}}'
+method: DELETE
+headers:
+- key: Accept
+  value: application/json
+- key: Content-Type
+  value: application/json
+- key: Origin
+  value: '{{origin}}'
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+auth:
+  type: noauth
+order: 2000
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: pm.test('HTTP 204', () => pm.response.to.have.status(204));

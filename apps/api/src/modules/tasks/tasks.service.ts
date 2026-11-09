@@ -1,3 +1,4 @@
+import { TaskPlanningRepository } from '../../database/repositories/task-planning.repository';
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { TaskCreate, TaskPatch, TaskList, TaskMove, TaskMoveResult, KanbanPage, ChecklistPatch, BoardLabelInput } from '@uni/shared';
 import { TasksRepository } from '../../database/repositories/tasks.repository';
@@ -11,7 +12,7 @@ import { PaginatedResult } from '../../common/pagination';
 import type { User } from '../../database/schema';
 @Injectable()
 export class TasksService {
-  constructor(private readonly tasks: TasksRepository, private readonly boards: BoardsRepository, private readonly audit: AuditRepository, private readonly unit: DatabaseUnitOfWork, private readonly policy: TaskAccessPolicy, private readonly boardPolicy: BoardAccessPolicy, private readonly notifications: NotificationsService) {}
+  constructor(private readonly planning: TaskPlanningRepository, private readonly tasks: TasksRepository, private readonly boards: BoardsRepository, private readonly audit: AuditRepository, private readonly unit: DatabaseUnitOfWork, private readonly policy: TaskAccessPolicy, private readonly boardPolicy: BoardAccessPolicy, private readonly notifications: NotificationsService) {}
   labels(user: User, boardId: string, q: KanbanPage) { this.boardPolicy.require(user, boardId); const rows = this.tasks.labels(boardId); return new PaginatedResult({ rows: rows.slice((q.page - 1) * q.limit, q.page * q.limit), total: rows.length }, q); }
   private validateLabels(boardId: string, ids: string[]) { for (const id of ids) if (!this.tasks.label(boardId, id)) throw new ConflictException('Las categorías deben pertenecer al mismo tablero'); }
   createLabel(user: User, boardId: string, input: BoardLabelInput) { return this.unit.run(() => { this.boardPolicy.require(user, boardId, 'MANAGE'); if (this.tasks.labels(boardId).length >= 100) throw new ConflictException('Máximo 100 categorías por tablero'); if (this.tasks.labelNameExists(boardId, input.name)) throw new ConflictException('Ya existe una categoría con ese nombre'); const label = this.tasks.createLabel(boardId, input); this.audit.record(user.id, 'BOARD_LABEL_CREATED', 'board', boardId, { labelId: label.id }); return label; }); }
@@ -22,11 +23,13 @@ export class TasksService {
   private eligible(boardId: string, departmentId: string, userId: string) { if (!this.boards.membership(boardId, userId) || !this.boards.eligibleUser(departmentId, userId)) throw new ConflictException('El responsable debe ser miembro activo y elegible del tablero'); }
   create(user: User, boardId: string, input: TaskCreate) {
     return this.unit.run(() => { const { board } = this.boardPolicy.require(user, boardId, 'EDIT'); if (input.boardId && input.boardId !== boardId) throw new ConflictException('El tablero del cuerpo no coincide con la ruta'); if (!this.boards.column(boardId, input.columnId)) throw new NotFoundException('Columna no encontrada en este tablero');
+      if (input.parentTaskId) { const parent = this.policy.require(user, input.parentTaskId).task; if (parent.boardId !== boardId || parent.archivedAt !== null) throw new ConflictException('La tarea principal debe estar activa en el mismo tablero'); }
       this.validateLabels(boardId, input.labelIds);
       for (const userId of input.assigneeIds) this.eligible(boardId, board.departmentId, userId);
       const now = Date.now(); const order = this.tasks.order(user, boardId, input.columnId); const t = this.tasks.create(boardId, user.id, input, (order.at(-1)?.position ?? 0) + 1024, now);
+      if (input.parentTaskId) this.planning.setParent(t.id, input.parentTaskId);
       this.tasks.setLabels(t.id, input.labelIds);
-      this.tasks.event(t.id, user.id, 'CREATED', now, { columnId: t.columnId });
+      this.tasks.event(t.id, user.id, 'CREATED', now, { columnId: t.columnId, parentTaskId: input.parentTaskId ?? null });
       for (const userId of input.assigneeIds) { this.tasks.addAssignee(t.id, userId, now); this.tasks.event(t.id, user.id, 'ASSIGNEE_ADDED', now, { userId }); this.notifications.taskAssigned(t, userId, user.id, now); }
       this.audit.record(user.id, 'TASK_CREATED', 'task', t.id, { boardId }); return this.detail(user, t.id);
     });

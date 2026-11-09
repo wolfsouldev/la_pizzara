@@ -1,0 +1,32 @@
+$kind: http-request
+description: Solo ADMIN. PATCH parcial; omitir conserva. Archivar no borra vínculos
+  existentes. Auditada y transaccional.
+url: '{{baseUrl}}/admin/services/:id'
+method: PATCH
+headers:
+- key: Accept
+  value: application/json
+- key: Origin
+  value: '{{origin}}'
+- key: X-CSRF-Token
+  value: '{{csrfToken}}'
+- key: Content-Type
+  value: application/json
+pathVariables:
+- key: id
+  value: '{{id}}'
+  disabled: false
+  description: '(Required) '
+body:
+  type: json
+  content: '{{servicePatch}}'
+auth:
+  type: noauth
+settings: {}
+order: 2000
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: 'pm.test("HTTP 200", () => pm.response.to.have.status(200));
+
+    pm.test("Respuesta con data", () => pm.expect(pm.response.json()).to.have.property("data"));'

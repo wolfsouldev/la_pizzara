@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Plataforma Universitaria · Fase 8",
-    "version": "1.8.0",
-    "description": "Sesiones reales SQLite, credenciales locales o LDAPS, origen estricto y CSRF. Acceso sin credenciales solo en desarrollo habilitado explícitamente y con cuenta local registrada por CLI. Sin registro público ni bootstrap administrativo HTTP."
+    "version": "1.12.0",
+    "description": "Sesiones reales SQLite, credenciales locales o LDAPS, origen estricto y CSRF. Acceso sin credenciales solo en desarrollo habilitado explícitamente y con cuenta local registrada por CLI. Sin registro público ni bootstrap administrativo HTTP. Los límites de peticiones se omiten solo en desarrollo con proveedor local y API enlazada a loopback; siguen activos en producción."
   },
   "servers": [
     {
@@ -3078,7 +3078,7 @@
     "/tickets/{id}/comments": {
       "get": {
         "summary": "Consultar comentarios públicos del ticket propio",
-        "description": "Portal del solicitante: solo tickets propios, incluso para ADMIN/TECHNICIAN. Nunca devuelve notas internas ni relaciones de tareas.",
+        "description": "Portal del solicitante: solo tickets propios, incluso para ADMIN/TECHNICIAN. Nunca devuelve notas internas ni relaciones de tareas. Conversación persistente del ticket, compartida con el chat. Mantiene permisos, CSRF en escrituras y privacidad pública/interna existentes; los cambios confirmados despiertan clientes autorizados mediante tickets:changed sin payload.",
         "operationId": "get_tickets_id_comments",
         "security": [
           {
@@ -3229,7 +3229,7 @@
       },
       "post": {
         "summary": "Responder públicamente en ticket propio no cerrado",
-        "description": "Portal del solicitante: solo tickets propios, incluso para ADMIN/TECHNICIAN. Nunca devuelve notas internas ni relaciones de tareas.",
+        "description": "Portal del solicitante: solo tickets propios, incluso para ADMIN/TECHNICIAN. Nunca devuelve notas internas ni relaciones de tareas. Conversación persistente del ticket, compartida con el chat. Mantiene permisos, CSRF en escrituras y privacidad pública/interna existentes; los cambios confirmados despiertan clientes autorizados mediante tickets:changed sin payload.",
         "operationId": "post_tickets_id_comments",
         "security": [
           {
@@ -4549,7 +4549,7 @@
     "/staff/tickets/{id}/comments": {
       "get": {
         "summary": "Consultar conversación y notas internas",
-        "description": "ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF.",
+        "description": "ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF. Conversación persistente del ticket, compartida con el chat. Mantiene permisos, CSRF en escrituras y privacidad pública/interna existentes; los cambios confirmados despiertan clientes autorizados mediante tickets:changed sin payload.",
         "operationId": "get_staff_tickets_id_comments",
         "security": [
           {
@@ -4701,7 +4701,7 @@
       },
       "post": {
         "summary": "Añadir respuesta pública o nota interna",
-        "description": "ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF.",
+        "description": "ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF. Conversación persistente del ticket, compartida con el chat. Mantiene permisos, CSRF en escrituras y privacidad pública/interna existentes; los cambios confirmados despiertan clientes autorizados mediante tickets:changed sin payload.",
         "operationId": "post_staff_tickets_id_comments",
         "security": [
           {
@@ -10634,6 +10634,3190 @@
           }
         }
       }
+    },
+    "/services": {
+      "get": {
+        "summary": "Listar servicios publicados",
+        "description": "Autenticado. Estados informados manualmente, no sondeo. Solo activos. Nunca notas internas.",
+        "operationId": "get_services",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 20,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "OPERATIONAL",
+                "DEGRADED",
+                "OUTAGE",
+                "MAINTENANCE",
+                "UNKNOWN"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos, origen no permitido o CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre duplicado, servicio no disponible o ticket cerrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/UniversityService"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "page",
+                        "limit",
+                        "total",
+                        "totalPages"
+                      ],
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "University services"
+        ]
+      }
+    },
+    "/services/{id}": {
+      "get": {
+        "summary": "Consultar servicio",
+        "description": "Autenticado. Solo activos; sin notas internas.",
+        "operationId": "get_services_id",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos, origen no permitido o CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre duplicado, servicio no disponible o ticket cerrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UniversityService"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "University services"
+        ]
+      }
+    },
+    "/services/{id}/notes": {
+      "get": {
+        "summary": "Historial de notas del servicio",
+        "description": "Autenticado. Solo notas PUBLIC de servicio activo, sin autores ni metadatos internos.",
+        "operationId": "get_services_id_notes",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 20,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos, origen no permitido o CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre duplicado, servicio no disponible o ticket cerrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ServiceNote"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "page",
+                        "limit",
+                        "total",
+                        "totalPages"
+                      ],
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "University services"
+        ]
+      }
+    },
+    "/admin/services": {
+      "get": {
+        "summary": "Listar servicios administración",
+        "description": "Autenticado. Estados informados manualmente, no sondeo. Solo ADMIN; incluye archivo bajo filtro explícito.",
+        "operationId": "get_admin_services",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 20,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "OPERATIONAL",
+                "DEGRADED",
+                "OUTAGE",
+                "MAINTENANCE",
+                "UNKNOWN"
+              ]
+            }
+          },
+          {
+            "name": "publication",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "archived",
+                "all"
+              ],
+              "default": "active"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos, origen no permitido o CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre duplicado, servicio no disponible o ticket cerrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/UniversityService"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "page",
+                        "limit",
+                        "total",
+                        "totalPages"
+                      ],
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "University services"
+        ]
+      },
+      "post": {
+        "summary": "Crear servicio",
+        "description": "Solo ADMIN. Nombre único ignorando mayúsculas. Estado inicial UNKNOWN; sin datos ficticios.",
+        "operationId": "post_admin_services",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos, origen no permitido o CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre duplicado, servicio no disponible o ticket cerrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UniversityService"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "University services"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/services/{id}": {
+      "get": {
+        "summary": "Consultar servicio",
+        "description": "Solo ADMIN.",
+        "operationId": "get_admin_services_id",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos, origen no permitido o CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre duplicado, servicio no disponible o ticket cerrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UniversityService"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "University services"
+        ]
+      },
+      "patch": {
+        "summary": "Editar, archivar o restaurar servicio",
+        "description": "Solo ADMIN. PATCH parcial; omitir conserva. Archivar no borra vínculos existentes. Auditada y transaccional.",
+        "operationId": "patch_admin_services_id",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos, origen no permitido o CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre duplicado, servicio no disponible o ticket cerrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UniversityService"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "University services"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServicePatch"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/services/{id}/notes": {
+      "get": {
+        "summary": "Historial de notas del servicio",
+        "description": "Solo ADMIN; incluye internas.",
+        "operationId": "get_admin_services_id_notes",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 20,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos, origen no permitido o CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre duplicado, servicio no disponible o ticket cerrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ServiceNote"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "page",
+                        "limit",
+                        "total",
+                        "totalPages"
+                      ],
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "University services"
+        ]
+      },
+      "post": {
+        "summary": "Añadir nota pública o interna",
+        "description": "Solo ADMIN. Visibilidad explícita. Una nota interna nunca se devuelve a TECHNICIAN o USER.",
+        "operationId": "post_admin_services_id_notes",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos, origen no permitido o CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre duplicado, servicio no disponible o ticket cerrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ServiceNote"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "University services"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceNoteCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/services/{id}/notes/{noteId}": {
+      "delete": {
+        "summary": "Eliminar nota",
+        "description": "Solo ADMIN. Comprueba pertenencia de nota al servicio; auditado.",
+        "operationId": "delete_admin_services_id_notes_noteId",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "noteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos, origen no permitido o CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre duplicado, servicio no disponible o ticket cerrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "ok"
+                      ],
+                      "properties": {
+                        "ok": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "University services"
+        ]
+      }
+    },
+    "/tickets/{id}/service": {
+      "get": {
+        "summary": "Consultar servicio vinculado",
+        "description": "Propietario exclusivamente.",
+        "operationId": "get_tickets_id_service",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos, origen no permitido o CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre duplicado, servicio no disponible o ticket cerrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TicketService"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "University services"
+        ]
+      },
+      "patch": {
+        "summary": "Vincular o desvincular servicio",
+        "description": "Propietario exclusivamente, o personal con permiso de edición en /staff. Cerrado 409; servicio archivado 409 para nuevo vínculo; null desvincula. Un servicio por ticket; no cambia categoría o departamento. Auditada y transaccional.",
+        "operationId": "patch_tickets_id_service",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos, origen no permitido o CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre duplicado, servicio no disponible o ticket cerrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TicketService"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "University services"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketServiceLink"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/tickets/{id}/service": {
+      "get": {
+        "summary": "Consultar servicio vinculado",
+        "description": "ADMIN o TECHNICIAN con alcance de departamento. DTO sin notas internas.",
+        "operationId": "get_staff_tickets_id_service",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos, origen no permitido o CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre duplicado, servicio no disponible o ticket cerrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TicketService"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "University services"
+        ]
+      },
+      "patch": {
+        "summary": "Vincular o desvincular servicio",
+        "description": "Propietario exclusivamente, o personal con permiso de edición en /staff. Cerrado 409; servicio archivado 409 para nuevo vínculo; null desvincula. Un servicio por ticket; no cambia categoría o departamento. Auditada y transaccional.",
+        "operationId": "patch_staff_tickets_id_service",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos, origen no permitido o CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre duplicado, servicio no disponible o ticket cerrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de peticiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TicketService"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "University services"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketServiceLink"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{id}/relations": {
+      "get": {
+        "summary": "Consultar subtareas y dependencias",
+        "description": "VIEW del tablero. Relaciones del mismo tablero, paginadas e incluidas archivadas. Nunca portal USER.",
+        "tags": [
+          "Task planning"
+        ],
+        "operationId": "get__tasks_id_relations",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "subtasksPage",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "blockedByPage",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "blocksPage",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso insuficiente u origen/CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso ausente o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Archivado, relaciones incompatibles o conflicto de estado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TaskRelations"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{id}/parent": {
+      "patch": {
+        "summary": "Cambiar tarea principal",
+        "description": "EDIT; mismo tablero, sin autorreferencia o ciclos, padre nuevo no archivado. null separa. No mueve ni completa tareas automáticamente.",
+        "tags": [
+          "Task planning"
+        ],
+        "operationId": "patch__tasks_id_parent",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso insuficiente u origen/CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso ausente o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Archivado, relaciones incompatibles o conflicto de estado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TaskDetail"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskParentPatch"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{id}/dependencies": {
+      "post": {
+        "summary": "Añadir tarea bloqueante",
+        "description": "EDIT, ambas activas del mismo tablero; sin duplicados ni ciclos. Bloqueo informativo por predecesoras en columnas no completadas, incluidas archivadas; no impide mover manualmente.",
+        "tags": [
+          "Task planning"
+        ],
+        "operationId": "post__tasks_id_dependencies",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso insuficiente u origen/CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso ausente o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Archivado, relaciones incompatibles o conflicto de estado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TaskDetail"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskDependencyCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{id}/dependencies/{blockingTaskId}": {
+      "delete": {
+        "summary": "Retirar dependencia",
+        "description": "EDIT de tarea activa; permite retirar predecesora archivada. Auditada y transaccional.",
+        "tags": [
+          "Task planning"
+        ],
+        "operationId": "delete__tasks_id_dependencies_blockingTaskId",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "blockingTaskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso insuficiente u origen/CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso ausente o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Archivado, relaciones incompatibles o conflicto de estado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Operación correcta"
+          }
+        }
+      }
+    },
+    "/boards/{id}/templates": {
+      "get": {
+        "summary": "Listar plantillas del tablero",
+        "description": "VIEW; alcance privado del tablero. Sin plantillas globales.",
+        "tags": [
+          "Task planning"
+        ],
+        "operationId": "get__boards_id_templates",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 20,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso insuficiente u origen/CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso ausente o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Archivado, relaciones incompatibles o conflicto de estado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TaskTemplate"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "page",
+                        "limit",
+                        "total",
+                        "totalPages"
+                      ],
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear plantilla de tarea",
+        "description": "MANAGE en tablero activo. Nombre único normalizado por tablero, máximo 100 plantillas; checklist máximo 100. No copia conversaciones, vínculos o responsables.",
+        "tags": [
+          "Task planning"
+        ],
+        "operationId": "post__boards_id_templates",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso insuficiente u origen/CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso ausente o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Archivado, relaciones incompatibles o conflicto de estado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TaskTemplate"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskTemplateCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards/{id}/templates/{templateId}": {
+      "patch": {
+        "summary": "Editar plantilla",
+        "description": "MANAGE, tablero activo; PATCH parcial. No cambia tareas creadas anteriormente.",
+        "tags": [
+          "Task planning"
+        ],
+        "operationId": "patch__boards_id_templates_templateId",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "templateId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso insuficiente u origen/CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso ausente o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Archivado, relaciones incompatibles o conflicto de estado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TaskTemplate"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskTemplatePatch"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar plantilla",
+        "description": "MANAGE, tablero activo. Conserva tareas creadas desde ella.",
+        "tags": [
+          "Task planning"
+        ],
+        "operationId": "delete__boards_id_templates_templateId",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "templateId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso insuficiente u origen/CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso ausente o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Archivado, relaciones incompatibles o conflicto de estado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Operación correcta"
+          }
+        }
+      }
+    },
+    "/boards/{id}/templates/{templateId}/tasks": {
+      "post": {
+        "summary": "Crear tarea desde plantilla",
+        "description": "EDIT, plantilla del mismo tablero. Columna obligatoria; omitir campos usa valores de plantilla. dueInDays suma periodos de 24 horas al momento de creación; dueAt explícito incluido null prevalece. Checklist nuevo sin completar, todo transaccional.",
+        "tags": [
+          "Task planning"
+        ],
+        "operationId": "post__boards_id_templates_templateId_tasks",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "templateId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso insuficiente u origen/CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso ausente o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Archivado, relaciones incompatibles o conflicto de estado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TaskDetail"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskFromTemplateCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{id}/template": {
+      "post": {
+        "summary": "Guardar tarea como plantilla",
+        "description": "MANAGE del tablero activo. Copia título, descripción, prioridad y títulos de checklist (máximo 100, todos sin completar al aplicar); no copia fechas absolutas, conversaciones, responsables, subtareas, dependencias o tickets.",
+        "tags": [
+          "Task planning"
+        ],
+        "operationId": "post__tasks_id_template",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Sin sesión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso insuficiente u origen/CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso ausente o no accesible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Archivado, relaciones incompatibles o conflicto de estado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite de solicitudes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TaskTemplate"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskTemplateSave"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -11096,6 +14280,11 @@
             "type": "string",
             "minLength": 10,
             "maxLength": 10000
+          },
+          "serviceId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         }
       },
@@ -12093,6 +15282,11 @@
               "format": "uuid"
             },
             "description": "Categorías del mismo tablero; reemplaza la selección completa."
+          },
+          "parentTaskId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         },
         "required": [
@@ -12516,6 +15710,23 @@
             "items": {
               "$ref": "#/components/schemas/BoardLabel"
             }
+          },
+          "parentTaskId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "isCompleted": {
+            "type": "boolean"
+          },
+          "subtaskTotal": {
+            "type": "integer"
+          },
+          "subtaskCompleted": {
+            "type": "integer"
+          },
+          "blockedByCount": {
+            "type": "integer"
           }
         },
         "required": [
@@ -12535,7 +15746,12 @@
           "assignees",
           "checklistTotal",
           "checklistCompleted",
-          "labels"
+          "labels",
+          "parentTaskId",
+          "isCompleted",
+          "subtaskTotal",
+          "subtaskCompleted",
+          "blockedByCount"
         ]
       },
       "TaskDetail": {
@@ -12583,7 +15799,26 @@
               "author"
             ]
           }
-        ]
+        ],
+        "properties": {
+          "parentTaskId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "isCompleted": {
+            "type": "boolean"
+          },
+          "subtaskTotal": {
+            "type": "integer"
+          },
+          "subtaskCompleted": {
+            "type": "integer"
+          },
+          "blockedByCount": {
+            "type": "integer"
+          }
+        }
       },
       "TaskMoveResult": {
         "type": "object",
@@ -12858,6 +16093,11 @@
               "format": "uuid"
             },
             "description": "Categorías del mismo tablero; reemplaza la selección completa."
+          },
+          "parentTaskId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         },
         "required": [
@@ -13107,6 +16347,670 @@
             }
           }
         ]
+      },
+      "UniversityService": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "status",
+          "isActive",
+          "statusUpdatedAt",
+          "createdAt",
+          "updatedAt",
+          "latestNote",
+          "url"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 3000
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPERATIONAL",
+              "DEGRADED",
+              "OUTAGE",
+              "MAINTENANCE",
+              "UNKNOWN"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "statusUpdatedAt": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "integer"
+          },
+          "updatedAt": {
+            "type": "integer"
+          },
+          "latestNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://",
+            "nullable": true,
+            "description": "URL absoluta HTTP/HTTPS de acceso, sin credenciales. No se consulta desde el servidor. null elimina el enlace; omitir en PATCH lo conserva."
+          }
+        }
+      },
+      "ServiceCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "description"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 3000,
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPERATIONAL",
+              "DEGRADED",
+              "OUTAGE",
+              "MAINTENANCE",
+              "UNKNOWN"
+            ],
+            "default": "UNKNOWN"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://",
+            "nullable": true,
+            "description": "URL absoluta HTTP/HTTPS de acceso, sin credenciales. No se consulta desde el servidor. null elimina el enlace; omitir en PATCH lo conserva."
+          }
+        }
+      },
+      "ServicePatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 3000,
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPERATIONAL",
+              "DEGRADED",
+              "OUTAGE",
+              "MAINTENANCE",
+              "UNKNOWN"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://",
+            "nullable": true,
+            "description": "URL absoluta HTTP/HTTPS de acceso, sin credenciales. No se consulta desde el servidor. null elimina el enlace; omitir en PATCH lo conserva."
+          }
+        },
+        "minProperties": 1
+      },
+      "ServiceNoteCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "body",
+          "visibility"
+        ],
+        "properties": {
+          "body": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "PUBLIC",
+              "INTERNAL"
+            ]
+          }
+        }
+      },
+      "ServiceNote": {
+        "type": "object",
+        "required": [
+          "id",
+          "body",
+          "visibility",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 5000
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "PUBLIC",
+              "INTERNAL"
+            ]
+          },
+          "createdAt": {
+            "type": "integer"
+          }
+        }
+      },
+      "TicketServiceLink": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "serviceId"
+        ],
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "TicketService": {
+        "type": "object",
+        "required": [
+          "service",
+          "canEdit"
+        ],
+        "properties": {
+          "service": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UniversityService"
+              }
+            ],
+            "nullable": true
+          },
+          "canEdit": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TaskTemplateCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "title"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "title": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 10000
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "NORMAL",
+              "HIGH",
+              "URGENT"
+            ]
+          },
+          "dueInDays": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3650,
+            "nullable": true
+          },
+          "checklist": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          }
+        }
+      },
+      "TaskTemplatePatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "title": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 10000
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "NORMAL",
+              "HIGH",
+              "URGENT"
+            ]
+          },
+          "dueInDays": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3650,
+            "nullable": true
+          },
+          "checklist": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          }
+        }
+      },
+      "TaskTemplate": {
+        "type": "object",
+        "required": [
+          "id",
+          "boardId",
+          "name",
+          "title",
+          "description",
+          "priority",
+          "dueInDays",
+          "checklist",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "title": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 10000
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "NORMAL",
+              "HIGH",
+              "URGENT"
+            ]
+          },
+          "dueInDays": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3650,
+            "nullable": true
+          },
+          "checklist": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "boardId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "integer"
+          },
+          "updatedAt": {
+            "type": "integer"
+          }
+        }
+      },
+      "TaskParentPatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "parentTaskId"
+        ],
+        "properties": {
+          "parentTaskId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "TaskDependencyCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "blockingTaskId"
+        ],
+        "properties": {
+          "blockingTaskId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "TaskTemplateSave": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          }
+        }
+      },
+      "TaskFromTemplateCreate": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 10000,
+            "nullable": true
+          },
+          "columnId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "NORMAL",
+              "HIGH",
+              "URGENT"
+            ]
+          },
+          "assigneeIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "uniqueItems": true,
+            "maxItems": 50
+          },
+          "dueAt": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "labelIds": {
+            "type": "array",
+            "maxItems": 20,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Categorías del mismo tablero; reemplaza la selección completa."
+          },
+          "parentTaskId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": [
+          "columnId"
+        ],
+        "additionalProperties": false
+      },
+      "RelatedTask": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "columnId",
+          "columnName",
+          "isCompleted",
+          "archivedAt",
+          "dueAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "columnId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "columnName": {
+            "type": "string"
+          },
+          "isCompleted": {
+            "type": "boolean"
+          },
+          "archivedAt": {
+            "type": "integer",
+            "nullable": true
+          },
+          "dueAt": {
+            "type": "integer",
+            "nullable": true
+          }
+        }
+      },
+      "TaskRelations": {
+        "type": "object",
+        "required": [
+          "parent",
+          "subtasks",
+          "blockedBy",
+          "blocks"
+        ],
+        "properties": {
+          "parent": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RelatedTask"
+              }
+            ],
+            "nullable": true
+          },
+          "subtasks": {
+            "type": "object",
+            "required": [
+              "data",
+              "meta"
+            ],
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/RelatedTask"
+                }
+              },
+              "meta": {
+                "type": "object",
+                "required": [
+                  "page",
+                  "limit",
+                  "total",
+                  "totalPages"
+                ],
+                "properties": {
+                  "page": {
+                    "type": "integer"
+                  },
+                  "limit": {
+                    "type": "integer"
+                  },
+                  "total": {
+                    "type": "integer"
+                  },
+                  "totalPages": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          },
+          "blockedBy": {
+            "type": "object",
+            "required": [
+              "data",
+              "meta"
+            ],
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/RelatedTask"
+                }
+              },
+              "meta": {
+                "type": "object",
+                "required": [
+                  "page",
+                  "limit",
+                  "total",
+                  "totalPages"
+                ],
+                "properties": {
+                  "page": {
+                    "type": "integer"
+                  },
+                  "limit": {
+                    "type": "integer"
+                  },
+                  "total": {
+                    "type": "integer"
+                  },
+                  "totalPages": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          },
+          "blocks": {
+            "type": "object",
+            "required": [
+              "data",
+              "meta"
+            ],
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/RelatedTask"
+                }
+              },
+              "meta": {
+                "type": "object",
+                "required": [
+                  "page",
+                  "limit",
+                  "total",
+                  "totalPages"
+                ],
+                "properties": {
+                  "page": {
+                    "type": "integer"
+                  },
+                  "limit": {
+                    "type": "integer"
+                  },
+                  "total": {
+                    "type": "integer"
+                  },
+                  "totalPages": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -13116,5 +17020,23 @@
     "authentication": "HttpOnly session cookie, strict Origin, auth.csrfToken; never userId/room from client",
     "serverEvent": "notifications:changed (no payload)",
     "semantics": "Wake only after persisted notification commit; HTTP remains authoritative, scopes rechecked on every read; reconnect refetch + 30s HTTP reconciliation even while connected. Session expiry/revocation rechecked before wake and every 30s without extending inactivity. No client application events."
+  },
+  "x-websocket": {
+    "path": "/api/v1/realtime",
+    "transport": "Socket.IO / WebSocket",
+    "authentication": "Cookie HttpOnly de sesión y auth.csrfToken; Origin exacto; revalidación de sesión y permisos antes de emitir.",
+    "serverEvents": {
+      "notifications:changed": {
+        "payload": null,
+        "description": "Reconcilia avisos personales por HTTP."
+      },
+      "tickets:changed": {
+        "payload": null,
+        "description": "Señal sin ID ni contenido: reconciliar conversaciones, detalles e historial autorizados mediante HTTP. Solo destinatarios con acceso actual al ticket; cambios internos no despiertan a solicitantes sin acceso de personal."
+      }
+    },
+    "clientEvents": [],
+    "persistence": "POST de comentarios existentes conserva mensaje, evento e historial en SQLite transaccionalmente. Señal solo tras confirmar evento persistido; no se envían mensajes de chat por el socket.",
+    "reconciliation": "Al conectar/reconectar y cada 30 segundos en vistas abiertas. Señal best-effort; SQLite/HTTP son fuente de verdad. Las lecturas GET de detalle, comentarios y eventos de tickets no renuevan la inactividad; las escrituras explícitas conservan su comportamiento."
   }
 }

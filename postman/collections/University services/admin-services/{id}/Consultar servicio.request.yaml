@@ -1,0 +1,22 @@
+$kind: http-request
+description: Solo ADMIN.
+url: '{{baseUrl}}/admin/services/:id'
+method: GET
+headers:
+- key: Accept
+  value: application/json
+pathVariables:
+- key: id
+  value: '{{id}}'
+  disabled: false
+  description: '(Required) '
+auth:
+  type: noauth
+settings: {}
+order: 1000
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: 'pm.test("HTTP 200", () => pm.response.to.have.status(200));
+
+    pm.test("Respuesta con data", () => pm.expect(pm.response.json()).to.have.property("data"));'

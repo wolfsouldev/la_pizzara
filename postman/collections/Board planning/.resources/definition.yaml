@@ -1,0 +1,34 @@
+$kind: collection
+name: Board planning
+description: Generada desde contrato v1.12.0. Cookie real; IDs, CSRF y cuerpos JSON
+  explícitos. VIEW consulta, EDIT relaciones y uso, MANAGE gestión. Preparar datos
+  aislados antes de ejecutar escrituras. Sin credenciales ni ejemplos simulados.
+auth:
+  type: noauth
+variables:
+- key: baseUrl
+  value: http://127.0.0.1:3000/api/v1
+- key: origin
+  value: http://localhost:5173
+- key: boardId
+  value: ''
+- key: taskId
+  value: ''
+- key: templateId
+  value: ''
+- key: blockingTaskId
+  value: ''
+- key: csrfToken
+  value: ''
+- key: parentPatch
+  value: ''
+- key: dependencyCreate
+  value: ''
+- key: templateSave
+  value: ''
+- key: taskFromTemplate
+  value: ''
+- key: templatePatch
+  value: ''
+- key: templateCreate
+  value: ''
