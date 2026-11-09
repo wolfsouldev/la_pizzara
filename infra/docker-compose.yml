@@ -84,7 +84,7 @@ services:
       retries: 3
     logging: *logs
   caddy:
-    image: caddy:2.11.7-alpine
+    image: public.ecr.aws/docker/library/caddy:2.11.7-alpine
     restart: unless-stopped
     read_only: true
     cap_drop: [ALL]
