@@ -1,6 +1,8 @@
 {
 	admin off
 	auto_https disable_redirects
+	# Browsers omit SNI when connecting to an IP literal; select the IP certificate.
+	default_sni {$PUBLIC_BIND_IP}
 	servers {
 		protocols h1 h2
 	}
