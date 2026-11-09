@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { Input } from '@/components/ui/input';
 import { Field } from '@/components/ui/field';
-import { ApiStatus } from '@/components/feedback/ApiStatus';
 import { api, setCsrfToken } from '@/lib/api-client';
 import { homeFor, useSession } from './auth';
 
@@ -56,8 +55,7 @@ export function LoginPage() {
       </form>
       {login.error && <p className="mt-4 rounded-lg border border-destructive/25 bg-destructive/10 p-3 text-sm text-destructive" role="alert">{login.error.message}</p>}
       {prelogin.error && <div role="alert" className="mt-4 space-y-2 text-sm text-destructive"><p>{prelogin.error.message}</p><Button variant="outline" onClick={() => void prelogin.refetch()}>Reintentar conexión</Button></div>}
-      <p className="mt-6 text-xs leading-5 text-muted-foreground">{prelogin.data?.provider === 'local' ? 'Las cuentas locales son exclusivas de desarrollo y no se trasladan a producción.' : 'Acceso seguro mediante LDAPS. No almacenamos tu contraseña institucional.'}</p>
-      <div className="mt-8 border-t border-border pt-5"><ApiStatus/></div>
+      <p className="mt-6 text-xs leading-5 text-muted-foreground">{prelogin.data?.provider === 'local' ? 'Las cuentas locales son exclusivas de desarrollo y no se trasladan a producción.' : 'Tu contraseña institucional se verifica de forma segura y no se guarda en La Pizzara.'}</p>
     </section></main>
   </div>;
 }

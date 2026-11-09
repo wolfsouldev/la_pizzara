@@ -5,11 +5,25 @@ import { env } from '../../../config/environment';
 import type { AuthenticatedIdentity, IdentityProvider } from './identity-provider';
 
 function escapeFilter(value: string) { return value.replace(/[\\*()\0]/g, c => `\\${c.charCodeAt(0).toString(16).padStart(2, '0')}`); }
+function rawAttribute(entry: Entry, key: string) {
+  return entry[Object.keys(entry).find(k => k.toLowerCase() === key.toLowerCase()) ?? key];
+}
 function attribute(entry: Entry, key: string) {
-  const value = entry[Object.keys(entry).find(k => k.toLowerCase() === key.toLowerCase()) ?? key];
+  const value = rawAttribute(entry, key);
   return Array.isArray(value) ? value[0] : value;
 }
 function text(entry: Entry, key: string): string | null { const value = attribute(entry, key); return typeof value === 'string' && value ? value : null; }
+function strings(entry: Entry, key: string): string[] {
+  const value = rawAttribute(entry, key);
+  if (typeof value === 'string') return [value];
+  return Array.isArray(value) ? (value as unknown[]).filter((item): item is string => typeof item === 'string') : [];
+}
+function isDomainUser(entry: Entry) {
+  // AD's well-known primary-group RID is 513. Also check direct membership
+  // because admins can change an account's primary group.
+  const groupDn = (env.AD_DOMAIN_USERS_GROUP_DN || `CN=Domain Users,CN=Users,${env.AD_BASE_DN}`).toLowerCase();
+  return text(entry, 'primaryGroupID') === '513' || strings(entry, 'memberOf').some(dn => dn.toLowerCase() === groupDn);
+}
 function guidBytes(entry: Entry) {
   const b = attribute(entry, 'objectGUID');
   if (!Buffer.isBuffer(b) || b.length !== 16) throw new ServiceUnavailableException('El directorio devolvió una identidad no válida');
@@ -44,7 +58,7 @@ export class LdapIdentityProvider implements IdentityProvider {
     await client.bind(env.AD_BIND_DN, env.AD_BIND_PASSWORD);
     try {
       const result = await client.search(env.AD_BASE_DN, { scope: 'sub', filter: `(&(objectCategory=person)(objectClass=user)${filter})`, sizeLimit: 2,
-        attributes: ['objectGUID', 'sAMAccountName', 'userPrincipalName', 'displayName', 'givenName', 'sn', 'mail', 'department', 'distinguishedName', 'userAccountControl'], explicitBufferAttributes: ['objectGUID'] });
+        attributes: ['objectGUID', 'sAMAccountName', 'userPrincipalName', 'displayName', 'givenName', 'sn', 'mail', 'department', 'distinguishedName', 'userAccountControl', 'primaryGroupID', 'memberOf'], explicitBufferAttributes: ['objectGUID'] });
       // A subtree search rooted at the domain naming context can legitimately
       // return referrals to AD's DomainDnsZones, ForestDnsZones, and Configuration
       // partitions. They are outside the configured user-search base; only entries
@@ -67,7 +81,7 @@ export class LdapIdentityProvider implements IdentityProvider {
       if (!canonicalUsername) throw new UnauthorizedException('Credenciales no válidas');
       return { provider: 'ldap', externalId: stableGuid(guidBytes(entry)), username: canonicalUsername,
         displayName: text(entry, 'displayName') ?? ([text(entry, 'givenName'), text(entry, 'sn')].filter(Boolean).join(' ') || canonicalUsername),
-        email: text(entry, 'mail'), department: text(entry, 'department') };
+        email: text(entry, 'mail'), department: text(entry, 'department'), isDomainUser: isDomainUser(entry) };
     } catch (error) {
       if (error instanceof UnauthorizedException || error instanceof ServiceUnavailableException) throw error;
       throw new ServiceUnavailableException('El directorio no está disponible');
@@ -83,10 +97,13 @@ export class LdapIdentityProvider implements IdentityProvider {
     } catch { throw new Error('No se pudo verificar LDAPS, cuenta de lectura y DN base; revisa DNS, TLS y permisos sin desactivar su validación'); }
     finally { await client.unbind().catch(() => undefined); }
   }
-  async checkEnabled(externalId: string): Promise<boolean> {
+  async inspectAccount(externalId: string): Promise<{ enabled: boolean; isDomainUser: boolean }> {
     const client = this.client();
-    try { const entry = await this.search(client, `(objectGUID=${guidFilter(externalId)})`); return this.enabled(entry) && stableGuid(guidBytes(entry)) === externalId; }
-    catch (error) { if (error instanceof UnauthorizedException) return false; throw new ServiceUnavailableException('No se pudo verificar el estado de la cuenta institucional'); }
+    try {
+      const entry = await this.search(client, `(objectGUID=${guidFilter(externalId)})`);
+      return { enabled: this.enabled(entry) && stableGuid(guidBytes(entry)) === externalId, isDomainUser: isDomainUser(entry) };
+    }
+    catch (error) { if (error instanceof UnauthorizedException) return { enabled: false, isDomainUser: false }; throw new ServiceUnavailableException('No se pudo verificar el estado de la cuenta institucional'); }
     finally { await client.unbind().catch(() => undefined); }
   }
 }

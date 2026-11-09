@@ -5,7 +5,7 @@ Cada detalle de ticket incluye una conversación pequeña entre el solicitante y
 ## Uso
 
 - **Mis solicitudes → ticket:** escribe una duda, queja o información adicional y pulsa **Enviar**. Enter introduce una línea; Ctrl/⌘+Enter envía. Máximo 5000 caracteres, sin contraseñas ni información sensible.
-- **Todos los tickets / Mis tickets → ticket:** ADMIN y técnico responsable pueden responder. Los demás técnicos con acceso de lectura consultan la conversación, sin enviar mensajes.
+- **Todos los tickets / Mis tickets → ticket:** SUPER_ADMIN y el técnico responsable pueden responder. Los demás técnicos con acceso de lectura consultan la conversación, sin enviar mensajes. ADMIN ordinario no tiene acceso a la bandeja interna.
 - El personal puede elegir **Respuesta pública** o **Nota interna**. Las notas se identifican con candado y fondo ámbar; nunca aparecen en el portal del solicitante. Tras guardar una nota se mantiene ese modo, para evitar publicar accidentalmente el siguiente borrador.
 - Los mensajes se ordenan de antiguos a nuevos, agrupados por día. **Cargar mensajes anteriores** recupera páginas del servidor. Si estás leyendo atrás, una respuesta nueva muestra **Nuevos mensajes**, sin llevarte automáticamente al final.
 - **En vivo** indica que el transporte está conectado. Si cae, el historial guardado permanece; se ofrece reconectar y se reconcilia por HTTP. El borrador permanece en memoria durante actualizaciones y reconexiones; no se almacena en localStorage y se pierde al recargar o salir del detalle.

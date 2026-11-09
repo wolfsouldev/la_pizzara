@@ -14,12 +14,12 @@ function person<T extends { id: AnySQLiteColumn; displayName: AnySQLiteColumn; u
 export class StaffTicketsRepository {
   constructor(private readonly database: DatabaseService, private readonly boardRepo: BoardsRepository) {}
   scope(user: User) {
-    if (user.role === 'ADMIN') return undefined;
+    if (user.role === 'SUPER_ADMIN') return undefined;
     if (user.role !== 'TECHNICIAN') return sql`0 = 1`;
     return inArray(tickets.departmentId, this.database.db.select({ id: departmentMembers.departmentId }).from(departmentMembers).where(eq(departmentMembers.userId, user.id)));
   }
   private scopedDepartments(user: User) {
-    return user.role === 'ADMIN' ? undefined : user.role === 'TECHNICIAN' ? inArray(departments.id, this.database.db.select({ id: departmentMembers.departmentId }).from(departmentMembers).where(eq(departmentMembers.userId, user.id))) : sql`0 = 1`;
+    return user.role === 'SUPER_ADMIN' ? undefined : user.role === 'TECHNICIAN' ? inArray(departments.id, this.database.db.select({ id: departmentMembers.departmentId }).from(departmentMembers).where(eq(departmentMembers.userId, user.id))) : sql`0 = 1`;
   }
   get(user: User, id: string) {
     return this.database.db.select({ ticket: getTableColumns(tickets), department: { id: departments.id, name: departments.name }, category: { id: ticketCategories.id, name: ticketCategories.name }, requester: person(requester), assignee: person(assignee) }).from(tickets)

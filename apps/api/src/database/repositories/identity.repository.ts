@@ -31,13 +31,29 @@ export class IdentityRepository {
       const existing = tx.select().from(users).where(and(eq(users.authProvider, identity.provider),
         identity.provider === 'local' ? eq(users.id, identity.externalId) : eq(users.externalId, identity.externalId))).get();
       if (existing && !existing.isActive) return;
+      const role = existing?.role === UserRole.SUPER_ADMIN ? UserRole.SUPER_ADMIN : identity.provider === 'ldap' && identity.isDomainUser ? UserRole.ADMIN : UserRole.USER;
       const profile = { username: identity.username, usernameNormalized: identity.username.toLowerCase(), displayName: identity.displayName,
         email: identity.email, adDepartment: identity.department, lastLoginAt: now, directoryCheckedAt: identity.provider === 'ldap' ? now : null, updatedAt: now };
-      if (existing) return tx.update(users).set(profile).where(eq(users.id, existing.id)).returning().get();
+      if (existing) return tx.update(users).set({ ...profile, ...(identity.provider === 'ldap' ? { role } : {}) }).where(eq(users.id, existing.id)).returning().get();
       if (identity.provider === 'local') return;
       // Match AD accounts exclusively by GUID. A conflicting username must not
       // transfer roles/memberships from a different GUID; UNIQUE rejects it.
-      return tx.insert(users).values({ id: randomUUID(), authProvider: 'ldap', externalId: identity.externalId, createdAt: now, ...profile }).returning().get();
+      return tx.insert(users).values({ id: randomUUID(), authProvider: 'ldap', externalId: identity.externalId, createdAt: now, ...profile, role }).returning().get();
+    });
+  }
+
+  syncDirectoryRole(userId: string, isDomainUser: boolean) {
+    return this.database.db.transaction(tx => {
+      const user = tx.select().from(users).where(eq(users.id, userId)).get();
+      if (!user || !user.isActive || user.authProvider !== 'ldap' || user.role === UserRole.SUPER_ADMIN) return false;
+      const role = isDomainUser ? UserRole.ADMIN : UserRole.USER;
+      if (user.role === role) return false;
+      const now = Date.now();
+      tx.update(users).set({ role, directoryCheckedAt: now, updatedAt: now }).where(eq(users.id, userId)).run();
+      tx.update(authSessions).set({ revokedAt: now }).where(and(eq(authSessions.userId, userId), isNull(authSessions.revokedAt))).run();
+      tx.insert(auditLogs).values({ id: randomUUID(), action: 'DIRECTORY_ROLE_SYNCED', entityType: 'user', entityId: userId,
+        metadata: { previousRole: user.role, role, source: 'Domain Users' }, createdAt: now }).run();
+      return true;
     });
   }
 
@@ -78,14 +94,14 @@ export class IdentityRepository {
       return user;
     });
   }
-  promoteAdmin(id: string, expectedUsername: string, provider: 'local' | 'ldap') {
+  promoteSuperAdmin(id: string, expectedUsername: string, provider: 'local' | 'ldap') {
     return this.database.db.transaction(tx => {
       const user = tx.select().from(users).where(and(eq(users.id, id), eq(users.username, expectedUsername), eq(users.authProvider, provider), eq(users.isActive, true))).get();
       if (!user?.lastLoginAt) return false;
       const now = Date.now();
-      tx.update(users).set({ role: UserRole.ADMIN, updatedAt: now }).where(eq(users.id, id)).run();
+      tx.update(users).set({ role: UserRole.SUPER_ADMIN, updatedAt: now }).where(eq(users.id, id)).run();
       tx.update(authSessions).set({ revokedAt: now }).where(eq(authSessions.userId, id)).run();
-      tx.insert(auditLogs).values({ id: randomUUID(), action: 'ADMIN_PROMOTED_CLI', entityType: 'user', entityId: id, metadata: { previousRole: user.role, role: UserRole.ADMIN }, createdAt: now }).run();
+      tx.insert(auditLogs).values({ id: randomUUID(), action: 'SUPER_ADMIN_PROMOTED_CLI', entityType: 'user', entityId: id, metadata: { previousRole: user.role, role: UserRole.SUPER_ADMIN }, createdAt: now }).run();
       return true;
     });
   }

@@ -7,7 +7,7 @@ import { Public } from '../../common/decorators/auth';
 export class HealthController {
   constructor(private readonly health: HealthService) {}
   @Public() @Get() @Header('Cache-Control', 'no-store')
-  @ApiOkResponse({ description: 'API operativa y consulta real a SQLite completada', schema: { type: 'object', required: ['data'], properties: { data: { type: 'object', required: ['status', 'database'], properties: { status: { type: 'string', enum: ['ok'] }, database: { type: 'string', enum: ['connected'] } } } } } })
-  @ApiServiceUnavailableResponse({ description: 'No se pudo verificar la base de datos' })
+  @ApiOkResponse({ description: 'Servicio disponible', schema: { type: 'object', required: ['data'], properties: { data: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: ['ok'] } } } } } })
+  @ApiServiceUnavailableResponse({ description: 'Servicio temporalmente no disponible' })
   getHealth() { return this.health.check(); }
 }

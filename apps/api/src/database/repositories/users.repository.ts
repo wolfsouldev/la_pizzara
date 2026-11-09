@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, count, desc, eq, isNull, or, getTableColumns } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNull, or, getTableColumns } from 'drizzle-orm';
 import { UserRole, type UserList } from '@uni/shared';
 import { DatabaseService } from '../database.service';
 import { users, authSessions, departments, departmentMembers } from '../schema';
@@ -16,7 +16,7 @@ export class UsersRepository {
     return { rows: this.database.db.select(safeUser).from(users).where(where).orderBy(desc(users.createdAt), users.id).limit(q.limit).offset((q.page - 1) * q.limit).all(), total: this.database.db.select({ n: count() }).from(users).where(where).get()!.n };
   }
   departments(id: string) { return this.database.db.select(getTableColumns(departments)).from(departments).innerJoin(departmentMembers, eq(departmentMembers.departmentId, departments.id)).where(eq(departmentMembers.userId, id)).all(); }
-  activeAdmins() { return this.database.db.select({ n: count() }).from(users).where(and(eq(users.role, UserRole.ADMIN), eq(users.isActive, true))).get()!.n; }
+  activeAdmins() { return this.database.db.select({ n: count() }).from(users).where(and(inArray(users.role, [UserRole.ADMIN, UserRole.SUPER_ADMIN]), eq(users.isActive, true))).get()!.n; }
   membershipCount(id: string) { return this.database.db.select({ n: count() }).from(departmentMembers).where(eq(departmentMembers.userId, id)).get()!.n; }
   change(id: string, patch: { role?: UserRole; isActive?: boolean }) {
     this.database.db.update(users).set({ ...patch, updatedAt: Date.now() }).where(eq(users.id, id)).run();

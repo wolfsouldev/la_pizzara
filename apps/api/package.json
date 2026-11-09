@@ -10,7 +10,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/scripts/migrate.ts",
     "user:create": "tsx src/scripts/create-local-user.ts",
-    "admin:promote": "tsx src/scripts/promote-admin.ts",
+    "superadmin:promote": "tsx src/scripts/promote-super-admin.ts",
     "db:backup": "tsx src/scripts/backup.ts",
     "db:restore": "tsx src/scripts/restore.ts",
     "ad:check": "tsx src/scripts/check-directory.ts"

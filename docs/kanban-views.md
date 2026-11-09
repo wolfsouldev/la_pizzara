@@ -15,8 +15,8 @@ Se conservan responsables, fechas, checklist, comentarios, vínculos privados, a
 
 ## Permisos y persistencia
 
-- USER nunca accede a tableros ni categorías internas.
-- VIEW consulta; EDIT asigna categorías y modifica/mueve tareas; MANAGE administra categorías. ADMIN conserva acceso global.
+- USER y ADMIN ordinario nunca acceden a tableros ni categorías internas.
+- VIEW consulta; EDIT asigna categorías y modifica/mueve tareas; MANAGE administra categorías. SUPER_ADMIN conserva acceso global; TECHNICIAN necesita pertenencia elegible al tablero.
 - El backend comprueba acceso, pertenencia al tablero y estado archivado. No acepta categorías de otro tablero ni movimientos entre tableros.
 - Nombres únicos por tablero sin distinguir mayúsculas; máximo 100 categorías por tablero y 20 por tarea. Colores limitados a seis valores validados.
 - Eliminar una categoría retira sus asociaciones sin eliminar ninguna tarea. Requiere confirmación y se registra en auditoría.

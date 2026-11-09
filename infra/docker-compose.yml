@@ -25,6 +25,7 @@ services:
       AD_URL: ${AD_URL:?Define real LDAPS URL}
       AD_BASE_DN: ${AD_BASE_DN:?Define real base DN}
       AD_BIND_DN: ${AD_BIND_DN:?Define service account DN}
+      AD_DOMAIN_USERS_GROUP_DN: ${AD_DOMAIN_USERS_GROUP_DN:-}
       AD_BIND_PASSWORD_FILE: /run/secrets/ad_bind_password
       AD_CA_CERT_PATH: /app/certs/ad-ca.pem
       AD_LOGIN_ATTRIBUTE: ${AD_LOGIN_ATTRIBUTE:-sAMAccountName}
@@ -57,7 +58,7 @@ services:
     tmpfs: ['/tmp:rw,noexec,nosuid,size=64m,mode=1777']
     networks: [app]
     healthcheck:
-      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/api/v1/health').then(async r=>{if(!r.ok||(await r.json()).data.database!=='connected')process.exit(1)}).catch(()=>process.exit(1))"]
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/api/v1/health').then(async r=>{if(!r.ok||(await r.json()).data.status!=='ok')process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 5s
       start_period: 60s

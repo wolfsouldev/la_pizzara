@@ -21,8 +21,8 @@ export class AdminServicesController {
   @Post() create(@CurrentUser() u: User, @Body(new ZodPipe(serviceCreateSchema)) body: ServiceCreate) { return this.services.create(u, body); }
   @Patch(':id') patch(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Body(new ZodPipe(servicePatchSchema)) body: ServicePatch) { return this.services.patch(u, id, body); }
   @Get(':id/notes') notes(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Query(new ZodPipe(serviceNoteQuerySchema)) q: { page: number; limit: number }) { return this.services.adminNotes(u, id, q); }
-  @Post(':id/notes') addNote(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Body(new ZodPipe(serviceNoteCreateSchema)) body: ServiceNoteCreate) { return this.services.addNote(u, id, body); }
-  @Delete(':id/notes/:noteId') deleteNote(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Param('noteId', new ZodPipe(uuidSchema)) noteId: string) { return this.services.deleteNote(u, id, noteId); }
+  @Post(':id/notes') @Roles(UserRole.SUPER_ADMIN) addNote(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Body(new ZodPipe(serviceNoteCreateSchema)) body: ServiceNoteCreate) { return this.services.addNote(u, id, body); }
+  @Delete(':id/notes/:noteId') @Roles(UserRole.SUPER_ADMIN) deleteNote(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Param('noteId', new ZodPipe(uuidSchema)) noteId: string) { return this.services.deleteNote(u, id, noteId); }
 }
 @ApiTags('University services') @ApiCookieAuth('session') @Controller('tickets/:id/service')
 export class TicketServiceController {
@@ -30,7 +30,7 @@ export class TicketServiceController {
   @Get() get(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string) { return this.services.ticket(u, id, false); }
   @Patch() link(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Body(new ZodPipe(ticketServiceLinkSchema)) body: { serviceId: string | null }) { return this.services.link(u, id, body.serviceId, false); }
 }
-@ApiTags('University services') @ApiCookieAuth('session') @Roles(UserRole.ADMIN, UserRole.TECHNICIAN) @Controller('staff/tickets/:id/service')
+@ApiTags('University services') @ApiCookieAuth('session') @Roles(UserRole.SUPER_ADMIN, UserRole.TECHNICIAN) @Controller('staff/tickets/:id/service')
 export class StaffTicketServiceController {
   constructor(private readonly services: ServicesService) {}
   @Get() get(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string) { return this.services.ticket(u, id, true); }

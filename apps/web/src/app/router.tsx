@@ -38,11 +38,18 @@ const router = createBrowserRouter([
       { path: '/', element: <Home/> },
       { path: '/app', element: <AppLayout/>, children: [{ index: true, element: <Navigate to="/app/tickets" replace/> }, { path: 'notifications', element: <NotificationsPage/> }, { path: 'profile', element: <ProfilePage/> }, { path: 'services', element: <ServicesPage/> }, { path: 'tickets', element: <MyTicketsPage/> }, { path: 'tickets/new', element: <NewTicketPage/> }, { path: 'tickets/:id', element: <TicketDetailRoute/> }] },
     ] },
-    { element: <ProtectedRoute roles={[UserRole.TECHNICIAN, UserRole.ADMIN]}/>, children: [
+    { element: <ProtectedRoute roles={[UserRole.TECHNICIAN]}/>, children: [
       { path: '/staff', element: <StaffLayout/>, children: [{ path: 'services', element: <ServicesPage/> }, { path: 'boards', element: <BoardsPage/> }, { path: 'boards/:id', element: <BoardRoute/> }, { path: 'tickets', element: <StaffTicketsPage key="all"/> }, { path: 'tickets/mine', element: <StaffTicketsPage key="mine" assignedToMe/> }, { path: 'tickets/:id', element: <StaffTicketDetailRoute/> }, { path: 'dashboard', element: <TicketDashboardPage/> }, { index: true, element: <Navigate to="/staff/dashboard" replace/> }, { path: 'notifications', element: <NotificationsPage/> }, { path: 'profile', element: <ProfilePage/> }, { path: 'access', element: <AccessPage area="staff"/> }] },
     ] },
     { element: <ProtectedRoute roles={[UserRole.ADMIN]}/>, children: [
-      { path: '/admin', element: <AdminLayout/>, children: [{ path: 'services', element: <ServicesPage admin/> }, { path: 'boards', element: <BoardsPage/> }, { path: 'boards/:id', element: <BoardRoute/> }, { path: 'tickets', element: <StaffTicketsPage key="all"/> }, { path: 'tickets/mine', element: <StaffTicketsPage key="mine" assignedToMe/> }, { path: 'tickets/:id', element: <StaffTicketDetailRoute/> }, { path: 'dashboard', element: <TicketDashboardPage/> }, { index: true, element: <Navigate to="/admin/dashboard" replace/> }, { path: 'notifications', element: <NotificationsPage/> }, { path: 'profile', element: <ProfilePage/> }, { path: 'access', element: <AccessPage area="admin"/> }, { path: 'departments', element: <DepartmentsPage/> }, { path: 'categories', element: <CategoriesPage/> }, { path: 'users', element: <UsersPage/> }, { path: 'audit', element: <AuditPage/> }] },
+      { path: '/admin', element: <AdminLayout/>, children: [
+        { path: 'services', element: <ServicesPage admin/> }, { path: 'departments', element: <DepartmentsPage/> }, { path: 'categories', element: <CategoriesPage/> },
+        { path: 'notifications', element: <NotificationsPage/> }, { path: 'profile', element: <ProfilePage/> }, { path: 'access', element: <AccessPage area="admin"/> },
+        { index: true, element: <Navigate to="/admin/services" replace/> },
+        { element: <ProtectedRoute roles={[UserRole.SUPER_ADMIN]}/>, children: [
+          { path: 'boards', element: <BoardsPage/> }, { path: 'boards/:id', element: <BoardRoute/> }, { path: 'tickets', element: <StaffTicketsPage key="all"/> }, { path: 'tickets/mine', element: <StaffTicketsPage key="mine" assignedToMe/> }, { path: 'tickets/:id', element: <StaffTicketDetailRoute/> }, { path: 'dashboard', element: <TicketDashboardPage/> }, { path: 'users', element: <UsersPage/> }, { path: 'audit', element: <AuditPage/> },
+        ] },
+      ] },
     ] },
   ] },
 ]);

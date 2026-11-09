@@ -5,7 +5,7 @@ import type { User } from '../../database/schema';
 import { CurrentUser, Roles } from '../../common/decorators/auth';
 import { ZodPipe } from '../../common/http';
 import { TaskLinksService } from './task-links.service';
-@ApiTags('task-ticket-links') @ApiCookieAuth('session') @Roles(UserRole.ADMIN, UserRole.TECHNICIAN) @Controller()
+@ApiTags('task-ticket-links') @ApiCookieAuth('session') @Roles(UserRole.SUPER_ADMIN, UserRole.TECHNICIAN) @Controller()
 export class TaskLinksController {
   constructor(private readonly links: TaskLinksService) {}
   @Get('tasks/:id/tickets') tickets(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Query(new ZodPipe(kanbanPageSchema)) q: KanbanPage) { return this.links.tickets(u, id, q); }

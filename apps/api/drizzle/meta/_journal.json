@@ -78,6 +78,13 @@
       "when": 1794175385491,
       "tag": "0010_light_brood",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1794265418718,
+      "tag": "0011_simple_sugar_man",
+      "breakpoints": true
     }
   ]
 }

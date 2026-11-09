@@ -33,4 +33,4 @@ export function useNotifications(page:number,unreadOnly=false,enabled=true,limit
 export function useReadNotification() {
   const client=useQueryClient();return useMutation({mutationFn:async(id:string|null)=>{const response=await api<unknown>(id?`/notifications/${id}/read`:'/notifications/read-all',{method:id?'PATCH':'POST'});return id?notificationSchema.parse(response.data):notificationReadAllSchema.parse(response.data);},onSuccess:()=>{void client.invalidateQueries({queryKey:['notifications']});}});
 }
-export const notificationsArea=(role:string|undefined)=>role==='ADMIN'?'/admin':role==='TECHNICIAN'?'/staff':'/app';
+export const notificationsArea=(role:string|undefined)=>role==='SUPER_ADMIN'||role==='ADMIN'?'/admin':role==='TECHNICIAN'?'/staff':'/app';

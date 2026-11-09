@@ -16,11 +16,11 @@ export class TaskLinksService {
   tickets(user: User, taskId: string, q: KanbanPage) {
     const { board } = this.taskPolicy.require(user, taskId);
     const result = this.links.tickets(user, taskId, q);
-    return new PaginatedResult({ total: result.total, rows: result.rows.map(({ ticketId, ticketNumber: number, title, status, priority, createdById, createdAt, assignedToId }) => ({ ticketId, publicNumber: ticketNumber(number), title, status, priority, createdById, createdAt, canUnlink: board.permission !== 'VIEW' && status !== 'CLOSED' && (user.role === 'ADMIN' || assignedToId === user.id) })) }, q);
+    return new PaginatedResult({ total: result.total, rows: result.rows.map(({ ticketId, ticketNumber: number, title, status, priority, createdById, createdAt, assignedToId }) => ({ ticketId, publicNumber: ticketNumber(number), title, status, priority, createdById, createdAt, canUnlink: board.permission !== 'VIEW' && status !== 'CLOSED' && (user.role === 'SUPER_ADMIN' || assignedToId === user.id) })) }, q);
   }
   tasksForTicket(user: User, ticketId: string, q: KanbanPage) {
     const { ticket } = this.ticketPolicy.requireStaff(user, ticketId); const result = this.links.tasks(user, ticketId, q);
-    return new PaginatedResult({ total: result.total, rows: result.rows.map(({ permission, ...row }) => ({ ...row, canUnlink: this.ticketPolicy.canEdit(user, ticket) && (user.role === 'ADMIN' || permission === 'EDIT' || permission === 'MANAGE') })) }, q);
+    return new PaginatedResult({ total: result.total, rows: result.rows.map(({ permission, ...row }) => ({ ...row, canUnlink: this.ticketPolicy.canEdit(user, ticket) && (user.role === 'SUPER_ADMIN' || permission === 'EDIT' || permission === 'MANAGE') })) }, q);
   }
   private record(user: User, taskId: string, ticketId: string, action: 'TICKET_LINKED' | 'TICKET_UNLINKED', now: number) {
     this.tasks.update(user, taskId, {}, now); this.tasks.event(taskId, user.id, 'UPDATED', now, { action, ticketId });

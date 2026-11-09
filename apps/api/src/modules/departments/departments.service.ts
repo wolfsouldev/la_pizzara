@@ -20,9 +20,10 @@ export class DepartmentsService {
   update(actor: User, id: string, patch: DepartmentPatch) {
     return this.unit.run(() => { const before = this.get(actor, id); const after = this.departments.update(id, patch); this.audit.record(actor.id, 'DEPARTMENT_UPDATED', 'department', id, { before, after }); return after; });
   }
-  members(actor: User, id: string, q: AdminList) { this.get(actor, id); return new PaginatedResult(this.departments.members(id, q), q); }
+  members(actor: User, id: string, q: AdminList) { this.policy.assertSuperAdmin(actor); this.get(actor, id); return new PaginatedResult(this.departments.members(id, q), q); }
   addMember(actor: User, id: string, userId: string) {
     return this.unit.run(() => {
+      this.policy.assertSuperAdmin(actor);
       const d = this.get(actor, id); const u = this.users.get(userId);
       if (!u) throw new NotFoundException('Usuario no encontrado');
       if (!d.isActive) throw new ConflictException('Activa el departamento antes de incorporar técnicos');
@@ -33,7 +34,7 @@ export class DepartmentsService {
     });
   }
   removeMember(actor: User, id: string, userId: string) {
-    this.unit.run(() => { this.get(actor, id); if (!this.departments.membership(id, userId)) throw new NotFoundException('Pertenencia no encontrada');
+    this.unit.run(() => { this.policy.assertSuperAdmin(actor); this.get(actor, id); if (!this.departments.membership(id, userId)) throw new NotFoundException('Pertenencia no encontrada');
       if (this.departments.hasAssignedTickets(id, userId)) throw new ConflictException('Reasigna primero los tickets no cerrados del técnico en este departamento');
       if (this.departments.hasBoardMembership(id, userId)) throw new ConflictException('Retira primero las pertenencias del técnico a los tableros del departamento');
       this.departments.removeMember(id, userId); this.audit.record(actor.id, 'DEPARTMENT_MEMBER_REMOVED', 'department', id, { userId }); });

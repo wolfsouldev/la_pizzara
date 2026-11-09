@@ -13,7 +13,7 @@ export class DepartmentsController {
   @Post() create(@CurrentUser() u: User, @Body(new ZodPipe(departmentCreateSchema)) body: DepartmentInput) { return this.service.create(u, body); }
   @Get(':id') get(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string) { return this.service.get(u, id); }
   @Patch(':id') update(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Body(new ZodPipe(departmentPatchSchema)) body: DepartmentPatch) { return this.service.update(u, id, body); }
-  @Get(':id/members') members(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Query(new ZodPipe(adminListSchema)) q: AdminList) { return this.service.members(u, id, q); }
-  @Post(':id/members') add(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Body(new ZodPipe(memberCreateSchema)) body: { userId: string }) { return this.service.addMember(u, id, body.userId); }
-  @Delete(':id/members/:userId') @HttpCode(204) remove(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Param('userId', new ZodPipe(uuidSchema)) userId: string) { this.service.removeMember(u, id, userId); }
+  @Get(':id/members') @Roles(UserRole.SUPER_ADMIN) members(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Query(new ZodPipe(adminListSchema)) q: AdminList) { return this.service.members(u, id, q); }
+  @Post(':id/members') @Roles(UserRole.SUPER_ADMIN) add(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Body(new ZodPipe(memberCreateSchema)) body: { userId: string }) { return this.service.addMember(u, id, body.userId); }
+  @Delete(':id/members/:userId') @Roles(UserRole.SUPER_ADMIN) @HttpCode(204) remove(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Param('userId', new ZodPipe(uuidSchema)) userId: string) { this.service.removeMember(u, id, userId); }
 }

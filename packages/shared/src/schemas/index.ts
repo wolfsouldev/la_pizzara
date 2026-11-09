@@ -3,7 +3,6 @@ export * from './auth';
 
 export const healthSchema = z.strictObject({
   status: z.literal('ok'),
-  database: z.literal('connected'),
 });
 export type HealthStatus = z.infer<typeof healthSchema>;
 

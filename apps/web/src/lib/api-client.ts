@@ -22,13 +22,13 @@ export async function api<T>(path: string, options: { method?: string; body?: un
       ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
     });
   } catch {
-    throw new ApiError(503, 'No se puede conectar con la API');
+    throw new ApiError(503, 'No se pudo conectar con el servicio. Inténtalo de nuevo.');
   }
   if (response.status === 204) return { data: undefined as T };
 
   let body: unknown;
   try { body = await response.json(); }
-  catch { throw new ApiError(response.ok ? 502 : response.status, 'La API no devolvió una respuesta JSON válida'); }
+  catch { throw new ApiError(response.ok ? 502 : response.status, 'El servicio devolvió una respuesta no válida.'); }
 
   if (!response.ok) {
     if (response.status === 401 && !path.startsWith('/auth/')) onUnauthorized?.();
@@ -37,7 +37,7 @@ export async function api<T>(path: string, options: { method?: string; body?: un
     throw new ApiError(response.status, message);
   }
   if (!body || typeof body !== 'object' || !('data' in body)) {
-    throw new ApiError(502, 'La respuesta no cumple el contrato de la API');
+    throw new ApiError(502, 'No se pudo validar la respuesta del servicio.');
   }
   return body as ApiResponse<T>;
 }

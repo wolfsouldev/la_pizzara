@@ -8,12 +8,15 @@ fecha del estado y notas, sin presentar disponibilidad inventada.
 ## Uso
 
 - Sidebar **Estado de servicios**: `/app/services`, `/staff/services` y
-  `/admin/services`. USER y TECHNICIAN consultan; solo ADMIN administra.
+  `/admin/services`. Todas las personas autenticadas consultan; ADMIN y
+  SUPER_ADMIN administran el catálogo. Las notas internas son exclusivas de
+  SUPER_ADMIN.
 - Tarjetas adaptables con búsqueda por nombre, filtro de estado, descripción,
   última nota pública y fecha del estado. Ficha con descripción completa e
   historial paginado. Filtros/página/ficha en URL (`?service=<uuid>`).
-- ADMIN: **Nuevo servicio**, editar nombre/descripción/estado, archivar/restaurar,
-  añadir notas públicas o internas y eliminar notas con confirmación.
+- ADMIN y SUPER_ADMIN: **Nuevo servicio**, editar nombre/descripción/estado y
+  archivar/restaurar. SUPER_ADMIN añade o elimina notas públicas/internas; ADMIN
+  solo consulta notas públicas.
 - Estados: Operativo, Con incidencias, No disponible, En mantenimiento y
   **Sin confirmar**. Este último es el predeterminado: crear un registro no
   acredita que el servicio esté funcionando.
@@ -29,9 +32,10 @@ sin integrar ese producto ni copiar métricas de disponibilidad.
 ## Privacidad y permisos
 
 Notas `PUBLIC`: toda la comunidad **autenticada**. Notas `INTERNAL`: exclusivamente
-ADMIN, **no TECHNICIAN**, incluso si el técnico atiende un ticket del servicio.
-El formulario de notas inicia en interna para evitar publicar contenido por
-accidente. Publicar exige seleccionar explícitamente la visibilidad pública.
+SUPER_ADMIN, **no ADMIN ordinario ni TECHNICIAN**, incluso si el técnico atiende
+un ticket del servicio. El formulario de notas inicia en interna para evitar
+publicar contenido por accidente. Publicar exige seleccionar explícitamente la
+visibilidad pública.
 
 El DTO de catálogo es una proyección explícita. La vista previa SQL solo busca
 notas PUBLIC; no hay campos de notas internas, autores o claves de normalización
@@ -50,8 +54,9 @@ de categoría/departamento. Puede elegirse al crear la solicitud o desde su deta
 formulario con ese servicio preseleccionado; la API vuelve a comprobarlo.
 
 - Portal propio: únicamente el solicitante, incluso si tiene rol ADMIN.
-- Atención: ADMIN o técnico del departamento; modificar exige ADMIN o técnico
-  responsable. La relación no otorga acceso a un ticket.
+- Atención: SUPER_ADMIN o técnico del departamento. Modificar exige SUPER_ADMIN
+  o técnico responsable. ADMIN ordinario no accede a la bandeja interna. La
+  relación no otorga acceso a un ticket.
 - Cerrado: vínculo de solo lectura (409 al intentar modificarlo).
 - Archivar un servicio lo retira del catálogo y bloquea nuevos vínculos (409),
   pero conserva relaciones existentes. Sus tickets muestran nombre/estado/fecha
@@ -68,10 +73,11 @@ Contrato REST v1.11 en `postman/specs/platform.openapi.json`:
 | Ruta bajo `/api/v1` | Acceso |
 | --- | --- |
 | GET `/services`, `/services/:id`, `/services/:id/notes` | Autenticado; activos y notas públicas |
-| GET/POST `/admin/services` | ADMIN |
-| GET/PATCH `/admin/services/:id` | ADMIN; archivo/restauración por `isActive` |
-| GET/POST `/admin/services/:id/notes` | ADMIN; incluye internas |
-| DELETE `/admin/services/:id/notes/:noteId` | ADMIN; comprueba el servicio de la nota |
+| GET/POST `/admin/services` | ADMIN o SUPER_ADMIN |
+| GET/PATCH `/admin/services/:id` | ADMIN o SUPER_ADMIN; archivo/restauración por `isActive` |
+| GET `/admin/services/:id/notes` | ADMIN o SUPER_ADMIN; ADMIN solo recibe notas públicas, SUPER_ADMIN también internas |
+| POST `/admin/services/:id/notes` | SUPER_ADMIN |
+| DELETE `/admin/services/:id/notes/:noteId` | SUPER_ADMIN; comprueba el servicio de la nota |
 | GET/PATCH `/tickets/:id/service` | Solo propietario |
 | GET/PATCH `/staff/tickets/:id/service` | Alcance y edición de atención |
 
@@ -80,7 +86,7 @@ PATCH de servicio es parcial: omitir conserva; `{}` se rechaza. Cambiar descripc
 no altera estado ni fecha del estado. Listas paginadas (20 por defecto, máximo
 100); la interfaz usa 12 tarjetas y 20 notas/opciones por página. El selector de
 servicio busca y pagina, no recorta el catálogo silenciosamente a 100 entradas.
-ADMIN filtra publicación `active|archived|all` (active por defecto).
+ADMIN y SUPER_ADMIN filtran publicación `active|archived|all` (active por defecto).
 
 Migración Drizzle `0008_ancient_ricochet.sql`: `university_services`,
 `service_notes` y columna/índice/FK nullable `tickets.service_id`. Los tickets
@@ -115,7 +121,7 @@ Tres columnas en escritorio amplio; una en móvil, con nombre y estado de la
 primera tarjeta visibles sin desplazarse en los tamaños revisados. Los estados
 usan texto, icono y color; no hay pulso de telemetría ni resumen global inventado.
 
-ADMIN puede guardar una **Dirección de acceso** opcional al crear/editar un
+ADMIN y SUPER_ADMIN pueden guardar una **Dirección de acceso** opcional al crear/editar un
 servicio. Las tarjetas con URL muestran **Acceder** y la ficha permite leer la
 dirección completa. Abren en otra pestaña con `noopener noreferrer` y sin referer.
 Sin URL no se muestra un botón vacío. Un enlace no acredita disponibilidad.

@@ -6,7 +6,7 @@
 postman spec lint postman/specs/platform.openapi.json --issueType=syntax
 postman collection lint 'postman/collections/University Phase 8'
 postman collection run 'postman/collections/University Phase 8' \
-  -i 'Comprobar API y consulta real a SQLite' \
+  -i 'Comprobar disponibilidad del servicio' \
   -i 'auth/Obtener CSRF de prelogin y disponibilidad de entrada local' \
   --no-report-events
 ```

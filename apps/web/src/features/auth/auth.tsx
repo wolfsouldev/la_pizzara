@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, Outlet } from 'react-router';
-import { UserRole, sessionUserSchema } from '@uni/shared';
+import { roleMatches, UserRole, sessionUserSchema } from '@uni/shared';
 import { api, ApiError, setCsrfToken } from '@/lib/api-client';
 import { SessionStatusPage } from './SessionStatusPage';
 
-export const homeFor = (role: UserRole) => role === UserRole.ADMIN ? '/admin/dashboard' : role === UserRole.TECHNICIAN ? '/staff/dashboard' : '/app/tickets';
+export const homeFor = (role: UserRole) => role === UserRole.SUPER_ADMIN ? '/admin/dashboard' : role === UserRole.ADMIN ? '/admin/services' : role === UserRole.TECHNICIAN ? '/staff/dashboard' : '/app/tickets';
 export function useSession() {
   return useQuery({ queryKey: ['session'], queryFn: async () => {
     try {
@@ -37,6 +37,6 @@ export function ProtectedRoute({ roles }: { roles?: UserRole[] }) {
   const session = useSession();
   if (session.isPending || session.error) return <SessionStatusPage error={session.error} pending={session.isPending || session.isFetching} retry={() => void session.refetch()}/>;
   if (!session.data) return <Navigate to="/login" replace/>;
-  if (roles && !roles.includes(session.data.role)) return <Navigate to="/unauthorized" replace/>;
+  if (roles && !roleMatches(session.data.role, roles)) return <Navigate to="/unauthorized" replace/>;
   return <Outlet/>;
 }

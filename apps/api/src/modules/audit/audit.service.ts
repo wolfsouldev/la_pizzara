@@ -7,5 +7,5 @@ import { PaginatedResult } from '../../common/pagination';
 @Injectable()
 export class AuditService {
   constructor(private readonly audit: AuditRepository, private readonly policy: DepartmentAccessPolicy) {}
-  list(actor: User, q: AdminList) { this.policy.assertManage(actor); return new PaginatedResult(this.audit.list(q), q); }
+  list(actor: User, q: AdminList) { this.policy.assertSuperAdmin(actor); return new PaginatedResult(this.audit.list(q), q); }
 }

@@ -15,7 +15,7 @@ export class TicketRealtimeService implements OnModuleDestroy {
   subscribe(listener: (change: Change) => void) { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; }
   canReceive(user: User, { ticketId, publicChange }: Change) {
     if (publicChange && this.tickets.owned(ticketId, user.id)) return true;
-    return (user.role === 'ADMIN' || user.role === 'TECHNICIAN') && !!this.staff.get(user, ticketId);
+    return (user.role === 'SUPER_ADMIN' || user.role === 'TECHNICIAN') && !!this.staff.get(user, ticketId);
   }
   afterEvent(ticketId: string, eventId: string, publicChange: boolean) {
     this.pending.push({ ticketId, eventId, publicChange });

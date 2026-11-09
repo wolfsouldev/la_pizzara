@@ -78,9 +78,9 @@ Después: rediseño oscuro, sidebar responsive, marca/iconos/favicon, vistas Kan
 
 ## 5. Identidad, sesiones y seguridad: no romper
 
-- Roles globales: `USER`, `TECHNICIAN`, `ADMIN`.
+- Roles globales: `USER`, `TECHNICIAN`, `ADMIN`, `SUPER_ADMIN`. En LDAP, pertenecer directamente a `Domain Users` (o tener el grupo primario RID 513) da `ADMIN`; fuera de ese grupo, el rol vuelve a `USER`. `SUPER_ADMIN` se concede solo por CLI, no por grupo AD ni por endpoint web.
 - Usuarios institucionales aparecen al iniciar sesión correctamente. Identidad estable AD por `objectGUID`, no por correo o nombre de usuario.
-- Sincronizar atributos no elimina rol interno ni pertenencias. Desactivación local impide acceso aunque AD autentique.
+- En cada login LDAP se deriva `ADMIN`/`USER` de `Domain Users` y se reconcilia también durante sesiones activas; `SUPER_ADMIN` permanece como elevación manual. La sincronización de atributos conserva pertenencias y el bloqueo local, pero ya no conserva roles institucionales anteriores.
 - LDAPS verifica certificado, cadena y FQDN. Cuenta de lectura busca coincidencia única; otra conexión cifrada valida el bind del usuario. Se cierran conexiones al terminar.
 - Hay comprobación periódica del estado de la cuenta AD. Si caduca la comprobación y no se puede validar el directorio, se falla de forma segura.
 - Las contraseñas AD no se persisten. No introducir `rejectUnauthorized: false`, `NODE_TLS_REJECT_UNAUTHORIZED=0` ni LDAP simple.
@@ -88,10 +88,10 @@ Después: rediseño oscuro, sidebar responsive, marca/iconos/favicon, vistas Kan
 - Inactividad predeterminada 8 horas y duración absoluta 24. Logout revoca; cambios de privilegios invalidan sesiones.
 - Mutaciones protegidas con origen estricto y token CSRF; no almacenar tokens de sesión en localStorage.
 - Proxy de confianza restringido al Caddy configurado; nunca confiar indiscriminadamente en proxies.
-- No permitir desactivar o degradar al último administrador activo.
-- Alta local y promoción administrativa por CLI, no registro público ni bootstrap HTTP.
+- No permitir degradar/desactivar al último `ADMIN` activo. `SUPER_ADMIN` se concede solo por CLI y no se puede modificar desde la web.
+- Alta local y promoción a `SUPER_ADMIN` por CLI, no registro público ni bootstrap HTTP.
 
-### Entrada de desarrollo
+### Entrada de desarrollo y administración elevada
 
 El botón **Entrar en desarrollo** crea una sesión real de una cuenta local previamente registrada. No es un bypass general de Guards ni permite elegir rol desde el navegador.
 
@@ -105,8 +105,8 @@ Requiere desarrollo, proveedor local, API loopback, origen local y habilitación
 
 - Categoría activa determina departamento; solicitante sale de sesión. Inicialmente `OPEN`, prioridad `NORMAL`, sin responsable.
 - Número público `UNI-000001` correlativo transaccional; UUID técnico separado.
-- Portal propio limitado al solicitante, incluso si quien lo usa tiene rol ADMIN/TECHNICIAN. El personal utiliza endpoints internos distintos.
-- Técnicos consultan solo sus departamentos. Las mutaciones de atención exigen las condiciones de responsabilidad correspondientes; ADMIN asigna/reasigna y cambia departamento.
+- Portal propio limitado al solicitante, incluso si quien lo usa tiene rol ADMIN/TECHNICIAN/SUPER_ADMIN. El personal utiliza endpoints internos distintos.
+- Técnicos consultan solo sus departamentos. Las mutaciones de atención exigen las condiciones de responsabilidad correspondientes; `SUPER_ADMIN` asigna/reasigna y cambia departamento. ADMIN ordinario no accede a la bandeja interna.
 - Estados: `OPEN`, `ASSIGNED`, `IN_PROGRESS`, `WAITING_USER`, `RESOLVED`, `CLOSED`. Prioridades: `LOW`, `NORMAL`, `HIGH`, `URGENT`.
 - Cerrado es de solo lectura. El solicitante puede cerrar un resuelto o reabrirlo dentro de siete días desde resolución; no reabre un cerrado.
 - Comentario del solicitante en `WAITING_USER` cambia a `IN_PROGRESS`.
@@ -115,13 +115,13 @@ Requiere desarrollo, proveedor local, API loopback, origen local y habilitación
 
 ### Tableros y tareas
 
-- `VIEW`: lectura; `EDIT`: crear/editar/mover/comentar; `MANAGE`: además configurar columnas, miembros y categorías. ADMIN tiene acceso global.
-- Pertenecer al departamento no concede acceso al tablero: técnico necesita pertenencia explícita elegible. USER nunca accede a datos internos.
+- `VIEW`: lectura; `EDIT`: crear/editar/mover/comentar; `MANAGE`: además configurar columnas, miembros y categorías. `SUPER_ADMIN` tiene acceso global.
+- Pertenecer al departamento no concede acceso al tablero: técnico necesita pertenencia explícita elegible. USER y ADMIN ordinario no acceden a datos internos.
 - Columnas iniciales: Pendiente, En progreso, En revisión, Completado. No eliminar una columna con tareas, incluidas archivadas.
 - La columna representa el estado de tarea: no añadir un segundo `status` independiente.
 - Movimientos/reordenamiento transaccionales, posiciones enteras espaciadas y normalización. El backend devuelve el orden canónico; React hace mutación optimista con rollback.
 - No aceptar `boardId`, `columnId` o `position` arbitrarios desde PATCH genérico. No mover entre tableros mediante el movimiento ordinario.
-- Responsables elegibles del tablero; un ADMIN también debe ser miembro explícito para asignarle tareas.
+- Responsables elegibles del tablero; los técnicos necesitan pertenencia correspondiente y la aplicación restringe las tareas internas a técnicos autorizados y `SUPER_ADMIN`.
 - Archivado conserva historial y deja recursos de solo lectura, con excepciones explícitas para revocar acceso/desvincular.
 - Tickets y tareas pueden vincularse muchos-a-muchos solo dentro del mismo departamento, con acceso a ambos recursos y permisos de escritura. Trasladar ticket con vínculos incompatibles devuelve conflicto.
 - Notificaciones pertenecen a su destinatario y vuelven a comprobar acceso a recursos privados.
@@ -167,12 +167,12 @@ Se cuidaron foco, contraste, campos etiquetados, errores, estados vacíos, contr
 - `apps/api/src/modules`: auth, access, departments, categories, users, audit, administration, tickets, notifications, boards, tasks y task-links, además de health.
 - `apps/api/src/common`: Guards, políticas y utilidades transversales.
 - `apps/api/src/scripts`: usuarios locales, promoción, migraciones, backups, restauración y comprobación AD.
-- `apps/api/drizzle`: **ocho migraciones**, de 0000 a 0007, más metadatos. Versionarlas; no usar `drizzle-kit push` para producción.
-- `apps/web/src/app`: router, providers y layouts USER/TECHNICIAN/ADMIN.
+- `apps/api/drizzle`: migraciones versionadas `0000` a `0011`, más metadatos. Versionarlas; no usar `drizzle-kit push` para producción.
+- `apps/web/src/app`: router, providers y layouts USER/TECHNICIAN/ADMIN/SUPER_ADMIN.
 - `apps/web/src/features`: pantallas conectadas por funcionalidad.
 - `packages/shared/src`: contratos, enums, tipos y Zod compartidos.
 - `infra`: Docker Compose, Caddy, ejemplos de entorno y scripts operativos.
-- `postman/specs/platform.openapi.json`: contrato actual v1.8.
+- `postman/specs/platform.openapi.json`: contrato actual v1.14.0.
 - `postman/collections/University Phase 8`: colección manual acumulada de 82 peticiones; `Kanban categories`: cuatro peticiones adicionales.
 
 API bajo `/api/v1`, éxito `{ data }`, listados `{ data, meta }`, error `{ error: { code, message } }`. Paginación predeterminada 20, máximo 100. Swagger en desarrollo `/api/docs`.
@@ -220,10 +220,10 @@ DEV_ACCESS_USERNAME=desarrollo
 ```bash
 mise exec node@24.15.0 -- pnpm dev
 # Opcional, desde otra terminal, para una cuenta existente:
-mise exec node@24.15.0 -- pnpm --filter api admin:promote --username desarrollo
+mise exec node@24.15.0 -- pnpm --filter api superadmin:promote --username desarrollo
 ```
 
-Promoción exige confirmar el usuario exacto, audita y revoca sesiones; volver a entrar. No asigna roles desde el navegador.
+La promoción `SUPER_ADMIN` exige confirmar el usuario exacto, audita y revoca sesiones; volver a entrar. La web no puede asignar ni modificar SUPER_ADMIN. `ADMIN` ordinario administra departamentos, categorías y estado público de servicios; usuarios/roles, auditoría, bandeja interna, tableros privados y notas internas requieren SUPER_ADMIN. Técnicos conservan su alcance por departamentos y permisos explícitos.
 
 - SPA: `http://localhost:5173`.
 - API: `http://127.0.0.1:3000/api/v1`.
@@ -288,7 +288,7 @@ El secreto AD debe ser legible solo por su propietario UID 1000; usar consola se
 `check-directory` valida TLS, bind de lectura y acceso base; **no prueba el login de un usuario institucional**. Tras primer login real, promocionar por consola y volver a iniciar sesión:
 
 ```bash
-./infra/scripts/compose.sh exec api node dist/scripts/promote-admin.js --username '<usuario-real>'
+./infra/scripts/compose.sh exec api node dist/scripts/promote-super-admin.js --username '<usuario-real>'
 ```
 
 No hay credenciales administrativas por defecto. Departamentos y categorías iniciales se crean desde el panel.

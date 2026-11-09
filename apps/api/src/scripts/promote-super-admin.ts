@@ -14,8 +14,9 @@ async function main() {
     const user = provisioning.promotionCandidate(username);
     console.log(`Identidad: ${user.displayName} | ${user.username} | ${user.email ?? 'sin correo'} | ${user.authProvider} | ${user.id} | rol ${user.role}`);
     await confirmIdentity(user.username, values.confirm);
-    provisioning.promote(user.id, user.username);
-    console.log('Promoción ADMIN registrada en auditoría. Sesiones revocadas; vuelve a entrar.');
+    provisioning.promoteSuperAdmin(user.id, user.username);
+    console.log('SUPER_ADMIN registrado en auditoría. Sesiones revocadas; vuelve a iniciar sesión.');
   } finally { database.onModuleDestroy(); }
 }
-main().catch(error => { console.error(error instanceof Error ? error.message : 'No se pudo promocionar'); process.exitCode = 1; });
+
+main().catch(error => { console.error(error instanceof Error ? error.message : 'No se pudo conceder el acceso de superadministrador'); process.exitCode = 1; });

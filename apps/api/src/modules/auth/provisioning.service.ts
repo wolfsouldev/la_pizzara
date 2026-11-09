@@ -13,10 +13,10 @@ export class ProvisioningService {
   }
   promotionCandidate(username: string) {
     const matches = this.identities.byUsername(env.AUTH_PROVIDER, username);
-    if (matches.length !== 1 || !matches[0]?.isActive || !matches[0].lastLoginAt) throw new Error('Requiere un único usuario activo del proveedor configurado que ya haya iniciado sesión');
+    if (matches.length !== 1 || !matches[0]?.isActive || !matches[0].lastLoginAt || matches[0].role === 'SUPER_ADMIN') throw new Error('Requiere un único usuario activo que aún no sea superadministrador y que ya haya iniciado sesión');
     return matches[0];
   }
-  promote(id: string, username: string) {
-    if (!this.identities.promoteAdmin(id, username, env.AUTH_PROVIDER)) throw new Error('La identidad cambió o dejó de estar activa; no se aplicó la promoción');
+  promoteSuperAdmin(id: string, username: string) {
+    if (!this.identities.promoteSuperAdmin(id, username, env.AUTH_PROVIDER)) throw new Error('La identidad cambió o dejó de estar activa; no se aplicó la promoción');
   }
 }

@@ -17,11 +17,11 @@ export class StaffTicketsService {
   options(user: User) { this.policy.assertStaff(user); return this.staff.options(user); }
   private allowed(user: User, t: Ticket): TicketStatus[] {
     if (!this.policy.canEdit(user, t)) return [];
-    return ticketStatuses.filter(s => s !== t.status && (transitions[t.status].includes(s) || (user.role === 'ADMIN' && s === 'RESOLVED' && t.status !== 'RESOLVED')) && (s !== 'ASSIGNED' || !!t.assignedToId));
+    return ticketStatuses.filter(s => s !== t.status && (transitions[t.status].includes(s) || (user.role === 'SUPER_ADMIN' && s === 'RESOLVED' && t.status !== 'RESOLVED')) && (s !== 'ASSIGNED' || !!t.assignedToId));
   }
   detail(user: User, id: string): StaffTicketDetail {
     const { ticket: t, department, category, requester, assignee } = this.policy.requireStaff(user, id);
-    return { id: t.id, ticketNumber: t.ticketNumber, publicNumber: ticketNumber(t.ticketNumber), title: t.title, description: t.description, department, category, requester, assignee, priority: t.priority, status: t.status, assignedAt: t.assignedAt, resolvedAt: t.resolvedAt, closedAt: t.closedAt, createdAt: t.createdAt, updatedAt: t.updatedAt, canEdit: this.policy.canEdit(user, t), canAssign: user.role === 'ADMIN' && t.status !== 'CLOSED', allowedStatuses: this.allowed(user, t) };
+    return { id: t.id, ticketNumber: t.ticketNumber, publicNumber: ticketNumber(t.ticketNumber), title: t.title, description: t.description, department, category, requester, assignee, priority: t.priority, status: t.status, assignedAt: t.assignedAt, resolvedAt: t.resolvedAt, closedAt: t.closedAt, createdAt: t.createdAt, updatedAt: t.updatedAt, canEdit: this.policy.canEdit(user, t), canAssign: user.role === 'SUPER_ADMIN' && t.status !== 'CLOSED', allowedStatuses: this.allowed(user, t) };
   }
   comments(user: User, id: string, q: TicketCommentsQuery) { this.policy.requireStaff(user, id); return new PaginatedResult(this.staff.comments(user, id, q), q); }
   events(user: User, id: string, q: TicketCommentsQuery) { this.policy.requireStaff(user, id); return new PaginatedResult(this.staff.events(user, id, q), q); }

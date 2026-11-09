@@ -6,7 +6,7 @@ import type { User } from '../../database/schema';
 import { Roles, CurrentUser } from '../../common/decorators/auth';
 import { ZodPipe } from '../../common/http';
 import { UsersService } from './users.service';
-@ApiTags('users') @ApiCookieAuth('session') @Roles(UserRole.ADMIN) @Controller('admin/users')
+@ApiTags('users') @ApiCookieAuth('session') @Roles(UserRole.SUPER_ADMIN) @Controller('admin/users')
 export class UsersController {
   constructor(private readonly service: UsersService) {}
   @Get() list(@CurrentUser() u: User, @Query(new ZodPipe(userListSchema)) q: UserList) { return this.service.list(u, q); }

@@ -7,11 +7,11 @@ import { CurrentUser, Roles } from '../../common/decorators/auth';
 import { ZodPipe } from '../../common/http';
 import { BoardsService } from './boards.service';
 import { TasksService } from '../tasks/tasks.service';
-@ApiTags('kanban') @ApiCookieAuth('session') @Roles(UserRole.ADMIN, UserRole.TECHNICIAN) @Controller('boards')
+@ApiTags('kanban') @ApiCookieAuth('session') @Roles(UserRole.SUPER_ADMIN, UserRole.TECHNICIAN) @Controller('boards')
 export class BoardsController {
   constructor(private readonly boards: BoardsService, private readonly tasks: TasksService) {}
   @Get() list(@CurrentUser() u: User, @Query(new ZodPipe(boardListSchema)) q: BoardList) { return this.boards.list(u, q); }
-  @Post() @Roles(UserRole.ADMIN) create(@CurrentUser() u: User, @Body(new ZodPipe(boardCreateSchema)) body: BoardCreate) { return this.boards.create(u, body); }
+  @Post() @Roles(UserRole.SUPER_ADMIN) create(@CurrentUser() u: User, @Body(new ZodPipe(boardCreateSchema)) body: BoardCreate) { return this.boards.create(u, body); }
   @Get(':id') detail(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string) { return this.boards.detail(u, id); }
   @Patch(':id') update(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Body(new ZodPipe(boardPatchSchema)) body: BoardPatch) { return this.boards.update(u, id, body); }
   @Post(':id/archive') @HttpCode(200) archive(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string) { return this.boards.archive(u, id); }

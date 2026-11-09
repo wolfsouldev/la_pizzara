@@ -11,7 +11,7 @@ export const users = sqliteTable('users', {
   displayName: text('display_name').notNull(),
   email: text('email'),
   adDepartment: text('ad_department'),
-  role: text('role', { enum: [UserRole.USER, UserRole.TECHNICIAN, UserRole.ADMIN] }).notNull().default(UserRole.USER),
+  role: text('role', { enum: [UserRole.USER, UserRole.TECHNICIAN, UserRole.ADMIN, UserRole.SUPER_ADMIN] }).notNull().default(UserRole.USER),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   lastLoginAt: integer('last_login_at'),
   directoryCheckedAt: integer('directory_checked_at'),
@@ -21,7 +21,7 @@ export const users = sqliteTable('users', {
   uniqueIndex('users_external_unique').on(t.authProvider, t.externalId).where(sql`${t.externalId} is not null`),
   uniqueIndex('users_username_unique').on(t.authProvider, t.usernameNormalized),
   index('users_role_active_idx').on(t.role, t.isActive),
-  check('users_role_check', sql`${t.role} in ('USER','TECHNICIAN','ADMIN')`),
+  check('users_role_check', sql`${t.role} in ('USER','TECHNICIAN','ADMIN','SUPER_ADMIN')`),
   check('users_provider_check', sql`${t.authProvider} in ('local','ldap')`),
 ]);
 export type User = typeof users.$inferSelect;

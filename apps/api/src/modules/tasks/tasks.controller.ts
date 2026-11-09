@@ -6,7 +6,7 @@ import type { User } from '../../database/schema';
 import { CurrentUser, Roles } from '../../common/decorators/auth';
 import { ZodPipe } from '../../common/http';
 import { TasksService } from './tasks.service';
-@ApiTags('kanban') @ApiCookieAuth('session') @Roles(UserRole.ADMIN, UserRole.TECHNICIAN) @Controller('tasks')
+@ApiTags('kanban') @ApiCookieAuth('session') @Roles(UserRole.SUPER_ADMIN, UserRole.TECHNICIAN) @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasks: TasksService) {}
   @Get(':id') detail(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string) { return this.tasks.detail(u, id); }

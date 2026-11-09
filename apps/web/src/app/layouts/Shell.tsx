@@ -12,7 +12,7 @@ import { BrandWordmark, BrandMark } from '@/components/brand/BrandLogo';
 
 type Area = 'app' | 'staff' | 'admin';
 type NavigationLink = { to: string; label: string; icon: LucideIcon; children?: NavigationLink[] };
-const roleLabels = { USER: 'Comunidad universitaria', TECHNICIAN: 'Equipo técnico', ADMIN: 'Administración' };
+const roleLabels = { USER: 'Comunidad universitaria', TECHNICIAN: 'Equipo técnico', ADMIN: 'Administración', SUPER_ADMIN: 'Superadministración' };
 
 export function Shell(props: { area: Area; title: string }) {
   const sidebarOpen = useWorkspaceUi(state => state.sidebarOpen);
@@ -52,7 +52,10 @@ function ShellContent({ area, title }: { area: Area; title: string }) {
   const boardWorkspace = useMatch('/:area/boards/:id') !== null && area !== 'app';
   const { setOpenMobile } = useSidebar();
   useEffect(() => { setOpenMobile(false); }, [location.pathname, setOpenMobile]);
-  const workspace: NavigationLink[] = area === 'app' ? [{ to: '/app/tickets', label: 'Mis solicitudes', icon: Ticket }] : [
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const workspace: NavigationLink[] = area === 'app' ? [{ to: '/app/tickets', label: 'Mis solicitudes', icon: Ticket }] : area === 'admin' && !isSuperAdmin ? [
+    { to: '/admin/services', label: 'Estado de servicios', icon: Activity },
+  ] : [
     { to: `/${area}/dashboard`, label: 'Resumen', icon: LayoutDashboard },
     { to: `/${area}/tickets`, label: 'Bandeja de tickets', icon: Ticket, children: [
       { to: `/${area}/tickets`, label: 'Todos los tickets', icon: Ticket },
@@ -60,19 +63,18 @@ function ShellContent({ area, title }: { area: Area; title: string }) {
     ] },
     { to: `/${area}/boards`, label: 'Tableros de trabajo', icon: Columns3 },
   ];
-  workspace.push({ to: `/${area}/services`, label: 'Estado de servicios', icon: Activity });
+  if (!(area === 'admin' && !isSuperAdmin)) workspace.push({ to: `/${area}/services`, label: 'Estado de servicios', icon: Activity });
   const administration: NavigationLink[] = area === 'admin' ? [
     { to: '/admin/departments', label: 'Departamentos', icon: Building2 },
     { to: '/admin/categories', label: 'Categorías', icon: Tags },
-    { to: '/admin/users', label: 'Usuarios', icon: Users },
-    { to: '/admin/audit', label: 'Auditoría', icon: ScrollText },
+    ...(isSuperAdmin ? [{ to: '/admin/users', label: 'Usuarios', icon: Users }, { to: '/admin/audit', label: 'Auditoría', icon: ScrollText }] : []),
   ] : [];
   const personal: NavigationLink[] = [
     ...(area !== 'app' ? [{ to: '/app/tickets', label: 'Mis solicitudes', icon: Ticket }] : []),
     { to: `/${area}/notifications`, label: 'Notificaciones', icon: Bell },
     { to: `/${area}/profile`, label: 'Mi perfil', icon: UserRound },
-    ...(area !== 'app' ? [{ to: `/${area}/access`, label: 'Permisos de acceso', icon: ShieldCheck }] : []),
-    ...(area === 'app' && user?.role === 'ADMIN' ? [{ to: '/admin/dashboard', label: 'Administración', icon: Building2 }] : []),
+    ...(area !== 'app' && (area !== 'staff' || user?.role === 'SUPER_ADMIN') ? [{ to: `/${area}/access`, label: 'Permisos de acceso', icon: ShieldCheck }] : []),
+    ...(area === 'app' && (user?.role === 'ADMIN' || isSuperAdmin) ? [{ to: isSuperAdmin ? '/admin/dashboard' : '/admin/services', label: 'Administración', icon: Building2 }] : []),
     ...(area === 'app' && user?.role === 'TECHNICIAN' ? [{ to: '/staff/dashboard', label: 'Panel de atención', icon: ShieldCheck }] : []),
   ];
   const currentLink = [...workspace.flatMap(link => link.children ?? [link]), ...administration, ...personal].find(link => location.pathname === link.to);

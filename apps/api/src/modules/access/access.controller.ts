@@ -7,7 +7,7 @@ import { Roles } from '../../common/decorators/auth';
 @ApiTags('access') @ApiCookieAuth('session')
 @Controller()
 export class AccessController {
-  @Get('staff/access') @Roles(UserRole.TECHNICIAN, UserRole.ADMIN)
+  @Get('staff/access') @Roles(UserRole.TECHNICIAN, UserRole.SUPER_ADMIN)
   staff() { return { area: 'staff', message: 'Permiso de atención validado por el servidor' }; }
   @Get('admin/access') @Roles(UserRole.ADMIN)
   admin() { return { area: 'admin', message: 'Permiso de administración validado por el servidor' }; }

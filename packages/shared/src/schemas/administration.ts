@@ -12,7 +12,9 @@ export const departmentPatchSchema = departmentCreateSchema.partial().refine(v =
 export const categoryCreateSchema = z.strictObject({ ...fields, departmentId: z.uuid() });
 export const categoryPatchSchema = departmentPatchSchema;
 export const memberCreateSchema = z.strictObject({ userId: z.uuid() });
-export const userRoleSchema = z.strictObject({ role: z.enum(UserRole) });
+// SUPER_ADMIN is never assignable through HTTP. Its only elevation path is the
+// explicit, audited server-side CLI command.
+export const userRoleSchema = z.strictObject({ role: z.enum([UserRole.USER, UserRole.TECHNICIAN, UserRole.ADMIN]) });
 export const userStatusSchema = z.strictObject({ isActive: z.boolean() });
 export const adminListSchema = z.strictObject({
   page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(100).default(20),

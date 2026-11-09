@@ -37,6 +37,7 @@ Editar `production.env` manualmente. No copiar el `.env` ni SQLite de desarrollo
 | CADDY_IPV4 | Dirección fija libre dentro de APP_SUBNET, fuera de APP_DYNAMIC_RANGE y distinta de gateway; API confía **solo** en ella |
 | AD_URL | LDAPS con FQDN del DC que coincide con certificado y puerto accesible |
 | AD_BASE_DN / AD_BIND_DN | DN base y cuenta institucional de lectura reales |
+| AD_DOMAIN_USERS_GROUP_DN | Opcional: DN exacto del grupo `Domain Users` si no está en el contenedor predeterminado `CN=Users` |
 | AD_CA_CERT_FILE | Archivo absoluto de CA pública PEM del AD en host; no leaf ni clave privada |
 | AD_BIND_PASSWORD_FILE | Archivo absoluto privado del host con contraseña de servicio |
 | WEB_TLS_DIRECTORY | Directorio de certificados web (existente incluso en modo `internal`) |
@@ -134,23 +135,23 @@ En arranque normal:
 - Una base con cualquier identidad local de desarrollo se rechaza en producción, aunque el proveedor configurado sea LDAP. Iniciar base institucional nueva.
 - CSP permite HTTP del mismo origen y WSS del mismo host/puerto explícito, sin abrir conexiones a cualquier servidor externo. Caddy espera salud de web/API; publica HTTPS y redirige HTTP, preservando `/api/*` y upgrade de WebSocket. No hay CORS entre web/API.
 
-Health comprueba **API y SQLite**, no disponibilidad continua del AD. El login/revalidación LDAP fallan cerrado cuando corresponde. Los contenedores se reinician tras fallo de proceso, pero `unhealthy` requiere diagnóstico; no se añade un sistema externo de reinicio/monitorización.
+El endpoint público de salud solo comunica disponibilidad genérica. Internamente comprueba la conexión a la base para readiness, pero no expone ese detalle ni comprueba disponibilidad continua del AD. El login/revalidación LDAP fallan cerrado cuando corresponde. Los contenedores se reinician tras fallo de proceso, pero `unhealthy` requiere diagnóstico; no se añade un sistema externo de reinicio/monitorización.
 
 Si se utiliza una instalación rootless/userns-remap/SELinux, adaptar permisos/bind labels al host y verificar preflight; no resolver errores de permisos haciendo públicos datos o secretos.
 
-## 6. Primer administrador y validación institucional
+## 6. Acceso administrativo y validación institucional
 
-1. Entrar por HTTPS con una cuenta institucional real. Se crea como USER con GUID AD estable; no hay registro público ni bootstrap HTTP.
-2. En consola autorizada, escribir el identificador real tras `--username`:
+1. Entrar por HTTPS con una cuenta institucional real. La pertenencia directa al grupo AD `Domain Users` (incluida la pertenencia como grupo primario RID 513) sincroniza el rol `ADMIN`; quien no pertenezca queda como `USER`. Por defecto se busca `CN=Domain Users,CN=Users,<AD_BASE_DN>`; si el grupo está en otra ubicación, configurar `AD_DOMAIN_USERS_GROUP_DN` con su DN comprobado. No se consulta el nombre visible del usuario ni se modifica Active Directory. No hay registro público ni bootstrap HTTP.
+2. `SUPER_ADMIN` es una elevación separada y manual, que no procede de grupos AD y no se puede asignar desde la web. Después de que la persona de confianza haya iniciado sesión una vez, en consola autorizada ejecutar:
 
 ```bash
-./infra/scripts/compose.sh exec api node dist/scripts/promote-admin.js --username "$INSTITUTIONAL_USERNAME"
+./infra/scripts/compose.sh exec api node dist/scripts/promote-super-admin.js --username "$INSTITUTIONAL_USERNAME"
 ```
 
-La CLI muestra identidad/proveedor/GUID local y exige escribir su username exacto. Revoca sesiones y deja auditoría. No inventar el usuario ni promover antes de verificar su identidad. En un checkout no contenedorizado sigue existiendo `pnpm --filter api admin:promote --username ...`.
+La CLI muestra la identidad/proveedor y exige confirmar exactamente el username. Registra auditoría, revoca sesiones y exige volver a iniciar sesión. Para un checkout no contenedorizado: `pnpm --filter api superadmin:promote --username "$INSTITUTIONAL_USERNAME"`.
 
-3. Volver a iniciar sesión; crear departamentos/categorías reales desde el panel. Técnicos aparecen después de su primer login; asignar rol y pertenencias. No hay seeds institucionales.
-4. Comprobar desde navegador confiado: ticket USER → asignación ADMIN → respuesta técnico → campana en vivo solicitante; nota interna invisible; técnico ajeno sin acceso; tablero privado, arrastre/recarga/checklist, vínculos privados y notificación de tarea.
+3. `ADMIN` administra departamentos, categorías y el estado público de servicios. Solo `SUPER_ADMIN` puede administrar usuarios/roles/activación, consultar auditoría, ver la bandeja interna completa, tableros privados y notas internas de servicios. Los técnicos mantienen acceso limitado por departamento y pertenencia explícita a tableros.
+4. Volver a iniciar sesión y validar permisos con una cuenta ADMIN común, otra TECHNICIAN y la cuenta SUPER_ADMIN: rutas/API sensibles deben denegar ADMIN común; el usuario sigue limitado a sus propias solicitudes.
 5. Reiniciar/recrear servicios y comprobar que se conservan los datos. Cerrar sesión y comprobar que ya no accede con la cookie anterior. Validar restricciones de red desde fuera de LAN/VPN.
 
 Estos pasos necesitan AD y red reales: **no se marcan completados por un health 200 local**.

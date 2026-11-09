@@ -17,7 +17,7 @@ Se conserva la API REST como fuente de datos y SQLite como almacenamiento durabl
 El chat de Mis solicitudes y del detalle interno reutiliza los comentarios persistentes existentes. **Se envía por POST HTTP con sesión, Origin y CSRF; se recibe en vivo mediante señal WebSocket y recuperación HTTP autorizada.** No se añade otro socket, servicio, tabla ni canal de escritura sin Guards. Ver `ticket-chat.md`.
 
 - `TicketRealtimeService` recibe el ID del evento insertado por el servicio de negocio. Una microtarea comprueba que el evento sigue persistido después de finalizar la transacción SQLite síncrona; rollback no emite. Agrupa cambios del mismo ticket.
-- Antes de cada señal, el gateway revalida la sesión y consulta el alcance actual del ticket: propietario para cambios públicos; ADMIN o TECHNICIAN con alcance de departamento para cambios internos/públicos. No basta con haber abierto antes la conversación.
+- Antes de cada señal, el gateway revalida la sesión y consulta el alcance actual del ticket: propietario para cambios públicos; SUPER_ADMIN o TECHNICIAN con alcance de departamento para cambios internos/públicos. ADMIN ordinario no accede a la bandeja interna. No basta con haber abierto antes la conversación.
 - Una nota interna no genera `tickets:changed` para un solicitante sin acceso de personal. Las consultas públicas continúan excluyendo las notas en SQL y usando el DTO público. El envío de una respuesta pública conserva la notificación persistente existente al solicitante.
 - Conectar/reconectar invalida conversación, detalle e historial abiertos. Se reconcilian cada 30 segundos, incluso si se perdió una señal. El historial carga 20 mensajes por página, sin duplicados visuales; cargar anteriores conserva el punto de lectura.
 - GET de detalle, comentarios y eventos de tickets ahora son lecturas pasivas: **no renuevan la inactividad**. Socket y polling no mantienen una pestaña olvidada autenticada. Los POST/PATCH y demás operaciones explícitas conservan su comportamiento.
@@ -52,7 +52,7 @@ Las mutaciones requieren Origin y X-CSRF-Token. DTO sin tokens/identidad del des
 
 ## Dashboard
 
-Conserva métricas SQL por alcance de tickets. `myPendingTasks` cuenta tareas asignadas al usuario, no archivadas, tablero no archivado y accesible, columna `is_done=false`. ADMIN ve tickets globales, pero **sus** tareas pendientes, no las de todo el mundo. Cambios de columnas/movimientos y permisos se concilian mediante consultas cada 30 segundos; no todos los cambios del Kanban generan notificaciones.
+Conserva métricas SQL por alcance de tickets. `myPendingTasks` cuenta tareas asignadas al usuario, no archivadas, tablero no archivado y accesible, columna `is_done=false`. SUPER_ADMIN ve tickets globales; TECHNICIAN ve solo su alcance departamental. ADMIN ordinario solo utiliza su portal de solicitudes. Las tareas pendientes son siempre las asignadas al propio usuario, no las de todo el mundo. Cambios de columnas/movimientos y permisos se concilian mediante consultas cada 30 segundos; no todos los cambios del Kanban generan notificaciones.
 
 ## Límites verificados y pendientes
 
