@@ -18,7 +18,7 @@ services:
       APP_HOST: 0.0.0.0
       APP_PORT: '3000'
       APP_ORIGIN: ${APP_ORIGIN:?Define APP_ORIGIN HTTPS}
-      APP_ADDITIONAL_ORIGINS: ${APP_ORIGIN:?Define APP_ORIGIN HTTPS},https://${PUBLIC_BIND_IP:?Bind only to authorized host interface}
+      APP_ADDITIONAL_ORIGINS: https://${PUBLIC_BIND_IP:?Bind only to authorized host interface}
       DATABASE_URL: /data/university.sqlite
       BACKUP_DIRECTORY: /backups
       TRUST_PROXY: ${CADDY_IPV4:?Define exact Caddy address on APP_SUBNET}
