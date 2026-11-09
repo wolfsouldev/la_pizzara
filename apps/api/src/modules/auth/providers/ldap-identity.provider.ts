@@ -45,7 +45,11 @@ export class LdapIdentityProvider implements IdentityProvider {
     try {
       const result = await client.search(env.AD_BASE_DN, { scope: 'sub', filter: `(&(objectCategory=person)(objectClass=user)${filter})`, sizeLimit: 2,
         attributes: ['objectGUID', 'sAMAccountName', 'userPrincipalName', 'displayName', 'givenName', 'sn', 'mail', 'department', 'distinguishedName', 'userAccountControl'], explicitBufferAttributes: ['objectGUID'] });
-      if (result.searchReferences.length || result.searchEntries.length !== 1) throw new UnauthorizedException('Credenciales no válidas');
+      // A subtree search rooted at the domain naming context can legitimately
+      // return referrals to AD's DomainDnsZones, ForestDnsZones, and Configuration
+      // partitions. They are outside the configured user-search base; only entries
+      // matching the filter within that base participate in identity selection.
+      if (result.searchEntries.length !== 1) throw new UnauthorizedException('Credenciales no válidas');
       return result.searchEntries[0]!;
     } catch (error) { if (error instanceof SizeLimitExceededError) throw new UnauthorizedException('Credenciales no válidas'); throw error; }
   }
