@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { and, count, desc, eq, getTableColumns, inArray, isNull, notInArray, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, getTableColumns, inArray, isNull, ne, notInArray, or, sql } from 'drizzle-orm';
 import { UserRole, type BoardCreate, type BoardPatch, type BoardList, type KanbanPage, type BoardCandidateQuery, type BoardPermission, type ColumnCreate, type ColumnPatch } from '@uni/shared';
 import { DatabaseService } from '../database.service';
 import { boards, boardMembers, boardColumns, departments, departmentMembers, users, tasks, taskAssignees, type User } from '../schema';
@@ -9,7 +9,7 @@ import { contains } from './list-query';
 export class BoardsRepository {
   constructor(private readonly database: DatabaseService) {}
   scope(user: User) {
-    if (user.role === UserRole.SUPER_ADMIN) return undefined;
+    if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN) return undefined;
     if (user.role !== UserRole.TECHNICIAN || !user.isActive) return sql`0 = 1`;
     return and(inArray(boards.id, this.database.db.select({ id: boardMembers.boardId }).from(boardMembers).where(eq(boardMembers.userId, user.id))), inArray(boards.departmentId, this.database.db.select({ id: departmentMembers.departmentId }).from(departmentMembers).where(eq(departmentMembers.userId, user.id))));
   }
@@ -17,7 +17,7 @@ export class BoardsRepository {
   list(user: User, q: BoardList) {
     const where = and(this.scope(user), eq(boards.isArchived, q.isArchived), q.departmentId ? eq(boards.departmentId, q.departmentId) : undefined, q.search ? or(contains(boards.name, q.search), contains(boards.description, q.search)) : undefined);
     const rows = this.database.db.select({ ...getTableColumns(boards), departmentName: departments.name, permission: boardMembers.permission }).from(boards).innerJoin(departments, eq(boards.departmentId, departments.id)).leftJoin(boardMembers, and(eq(boardMembers.boardId, boards.id), eq(boardMembers.userId, user.id))).where(where).orderBy(desc(boards.updatedAt), boards.id).limit(q.limit).offset((q.page - 1) * q.limit).all();
-    return { rows: rows.map(b => ({ ...b, permission: user.role === UserRole.SUPER_ADMIN ? 'MANAGE' as const : b.permission! })), total: this.database.db.select({ n: count() }).from(boards).where(where).get()!.n };
+    return { rows: rows.map(b => ({ ...b, permission: user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN ? 'MANAGE' as const : b.permission! })), total: this.database.db.select({ n: count() }).from(boards).where(where).get()!.n };
   }
   activeDepartment(id: string) { return this.database.db.select({ id: departments.id }).from(departments).where(and(eq(departments.id, id), eq(departments.isActive, true))).get(); }
   create(userId: string, input: BoardCreate, now: number) { return this.database.db.insert(boards).values({ id: randomUUID(), ...input, createdById: userId, createdAt: now, updatedAt: now }).returning().get()!; }
@@ -29,14 +29,17 @@ export class BoardsRepository {
   hasTasks(boardId: string, columnId: string) { return !!this.database.db.select({ id: tasks.id }).from(tasks).where(and(eq(tasks.boardId, boardId), eq(tasks.columnId, columnId))).limit(1).get(); }
   deleteColumn(boardId: string, id: string) { this.database.db.delete(boardColumns).where(and(eq(boardColumns.boardId, boardId), eq(boardColumns.id, id))).run(); }
   membership(boardId: string, userId: string) { return this.database.db.select().from(boardMembers).where(and(eq(boardMembers.boardId, boardId), eq(boardMembers.userId, userId))).get(); }
-  private eligibleCondition(departmentId: string) { return and(eq(users.isActive, true), or(eq(users.role, UserRole.SUPER_ADMIN), and(eq(users.role, UserRole.TECHNICIAN), inArray(users.id, this.database.db.select({ id: departmentMembers.userId }).from(departmentMembers).where(eq(departmentMembers.departmentId, departmentId)))))); }
+  private eligibleCondition(departmentId: string) { return and(eq(users.isActive, true), or(eq(users.role, UserRole.SUPER_ADMIN), eq(users.role, UserRole.ADMIN), and(eq(users.role, UserRole.TECHNICIAN), inArray(users.id, this.database.db.select({ id: departmentMembers.userId }).from(departmentMembers).where(eq(departmentMembers.departmentId, departmentId)))))); }
   eligibleUser(departmentId: string, userId: string) { return this.database.db.select({ id: users.id, role: users.role }).from(users).where(and(eq(users.id, userId), this.eligibleCondition(departmentId))).get(); }
   members(boardId: string, departmentId: string, q: KanbanPage) {
     const where = eq(boardMembers.boardId, boardId);
     return { rows: this.database.db.select({ boardId: boardMembers.boardId, userId: boardMembers.userId, permission: boardMembers.permission, createdAt: boardMembers.createdAt, displayName: users.displayName, username: users.username, isActive: users.isActive, eligible: sql<boolean>`case when ${this.eligibleCondition(departmentId)} then 1 else 0 end`.mapWith(Boolean) }).from(boardMembers).innerJoin(users, eq(boardMembers.userId, users.id)).where(where).orderBy(users.displayName, users.id).limit(q.limit).offset((q.page - 1) * q.limit).all(), total: this.database.db.select({ n: count() }).from(boardMembers).where(where).get()!.n };
   }
-  candidates(boardId: string, departmentId: string, q: BoardCandidateQuery) {
-    const where = and(this.eligibleCondition(departmentId), notInArray(users.id, this.database.db.select({ id: boardMembers.userId }).from(boardMembers).where(eq(boardMembers.boardId, boardId))), q.search ? or(contains(users.displayName, q.search), contains(users.username, q.search)) : undefined);
+  candidates(boardId: string, departmentId: string, actorRole: UserRole, q: BoardCandidateQuery) {
+    const eligible = actorRole === UserRole.ADMIN || actorRole === UserRole.SUPER_ADMIN
+      ? this.eligibleCondition(departmentId)
+      : and(this.eligibleCondition(departmentId), ne(users.role, UserRole.ADMIN));
+    const where = and(eligible, notInArray(users.id, this.database.db.select({ id: boardMembers.userId }).from(boardMembers).where(eq(boardMembers.boardId, boardId))), q.search ? or(contains(users.displayName, q.search), contains(users.username, q.search)) : undefined);
     return { rows: this.database.db.select({ id: users.id, displayName: users.displayName, username: users.username, role: users.role }).from(users).where(where).orderBy(users.displayName, users.id).limit(q.limit).offset((q.page - 1) * q.limit).all(), total: this.database.db.select({ n: count() }).from(users).where(where).get()!.n };
   }
   addMember(boardId: string, userId: string, permission: BoardPermission, now: number) { this.database.db.insert(boardMembers).values({ boardId, userId, permission, createdAt: now }).run(); }

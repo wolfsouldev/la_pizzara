@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import type { BoardCreate, BoardPatch, BoardList, BoardPermission, BoardDetail, KanbanPage, BoardCandidateQuery, ColumnCreate, ColumnPatch } from '@uni/shared';
+import { UserRole, type BoardCreate, type BoardPatch, type BoardList, type BoardPermission, type BoardDetail, type KanbanPage, type BoardCandidateQuery, type ColumnCreate, type ColumnPatch } from '@uni/shared';
 import { BoardsRepository } from '../../database/repositories/boards.repository';
 import { TasksRepository } from '../../database/repositories/tasks.repository';
 import { AuditRepository } from '../../database/repositories/audit.repository';
@@ -23,10 +23,10 @@ export class BoardsService {
   update(user: User, id: string, patch: BoardPatch) { return this.unit.run(() => { this.policy.require(user, id, 'MANAGE'); this.boards.update(id, patch, Date.now()); this.audit.record(user.id, 'BOARD_UPDATED', 'board', id, { fields: Object.keys(patch) }); return this.detail(user, id); }); }
   archive(user: User, id: string) { return this.unit.run(() => { this.policy.require(user, id, 'MANAGE'); this.boards.update(id, { isArchived: true }, Date.now()); this.audit.record(user.id, 'BOARD_ARCHIVED', 'board', id); return this.detail(user, id); }); }
   members(user: User, id: string, q: KanbanPage) { const { board } = this.policy.require(user, id); return new PaginatedResult(this.boards.members(id, board.departmentId, q), q); }
-  candidates(user: User, id: string, q: BoardCandidateQuery) { const { board } = this.policy.require(user, id, 'MANAGE'); return new PaginatedResult(this.boards.candidates(id, board.departmentId, q), q); }
+  candidates(user: User, id: string, q: BoardCandidateQuery) { const { board } = this.policy.require(user, id, 'MANAGE'); return new PaginatedResult(this.boards.candidates(id, board.departmentId, user.role, q), q); }
   private memberResult(boardId: string, userId: string, departmentId: string) { const membership = this.boards.membership(boardId, userId)!; const person = this.tasks.author(userId); return { ...membership, userId, displayName: person.displayName, username: person.username, isActive: true, eligible: !!this.boards.eligibleUser(departmentId, userId) }; }
   addMember(user: User, id: string, userId: string, permission: BoardPermission) {
-    return this.unit.run(() => { const { board } = this.policy.require(user, id, 'MANAGE'); if (!this.boards.eligibleUser(board.departmentId, userId)) throw new ConflictException('Debe ser un técnico activo del departamento o un administrador activo'); if (this.boards.membership(id, userId)) throw new ConflictException('El usuario ya es miembro');
+    return this.unit.run(() => { const { board } = this.policy.require(user, id, 'MANAGE'); const candidate = this.boards.eligibleUser(board.departmentId, userId); if (!candidate || (user.role === UserRole.TECHNICIAN && candidate.role === UserRole.ADMIN)) throw new ConflictException('Debe ser un técnico activo del departamento o un administrador incorporado por ADMIN/SUPER_ADMIN'); if (this.boards.membership(id, userId)) throw new ConflictException('El usuario ya es miembro');
       this.boards.addMember(id, userId, permission, Date.now()); this.audit.record(user.id, 'BOARD_MEMBER_ADDED', 'board', id, { userId, permission }); return this.memberResult(id, userId, board.departmentId); });
   }
   changeMember(user: User, id: string, userId: string, permission: BoardPermission) {

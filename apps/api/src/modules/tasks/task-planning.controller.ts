@@ -6,7 +6,7 @@ import { CurrentUser, Roles } from '../../common/decorators/auth';
 import { ZodPipe } from '../../common/http';
 import type { User } from '../../database/schema';
 import { TaskPlanningService } from './task-planning.service';
-@ApiTags('Task planning') @ApiCookieAuth('session') @Roles(UserRole.SUPER_ADMIN, UserRole.TECHNICIAN) @Controller('tasks')
+@ApiTags('Task planning') @ApiCookieAuth('session') @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TECHNICIAN) @Controller('tasks')
 export class TaskPlanningController {
   constructor(private readonly planning: TaskPlanningService) {}
   @Get(':id/relations') relations(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Query(new ZodPipe(taskRelationsQuerySchema)) q: TaskRelationsQuery) { return this.planning.relations(u, id, q); }
@@ -15,7 +15,7 @@ export class TaskPlanningController {
   @Delete(':id/dependencies/:blockingTaskId') @HttpCode(204) remove(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Param('blockingTaskId', new ZodPipe(uuidSchema)) blockingTaskId: string) { this.planning.removeDependency(u, id, blockingTaskId); }
   @Post(':id/template') template(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Body(new ZodPipe(taskTemplateSaveSchema)) body: { name: string }) { return this.planning.saveTemplate(u, id, body.name); }
 }
-@ApiTags('Task planning') @ApiCookieAuth('session') @Roles(UserRole.SUPER_ADMIN, UserRole.TECHNICIAN) @Controller('boards/:id/templates')
+@ApiTags('Task planning') @ApiCookieAuth('session') @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TECHNICIAN) @Controller('boards/:id/templates')
 export class TaskTemplatesController {
   constructor(private readonly planning: TaskPlanningService) {}
   @Get() list(@CurrentUser() u: User, @Param('id', new ZodPipe(uuidSchema)) id: string, @Query(new ZodPipe(kanbanPageSchema)) q: KanbanPage) { return this.planning.templates(u, id, q); }

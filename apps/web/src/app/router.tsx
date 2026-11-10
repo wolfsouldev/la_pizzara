@@ -44,10 +44,11 @@ const router = createBrowserRouter([
     { element: <ProtectedRoute roles={[UserRole.ADMIN]}/>, children: [
       { path: '/admin', element: <AdminLayout/>, children: [
         { path: 'services', element: <ServicesPage admin/> }, { path: 'departments', element: <DepartmentsPage/> }, { path: 'categories', element: <CategoriesPage/> },
+        { path: 'boards', element: <BoardsPage/> }, { path: 'boards/:id', element: <BoardRoute/> }, { path: 'tickets', element: <StaffTicketsPage key="all"/> }, { path: 'tickets/mine', element: <StaffTicketsPage key="mine" assignedToMe/> }, { path: 'tickets/:id', element: <StaffTicketDetailRoute/> }, { path: 'dashboard', element: <TicketDashboardPage/> }, { path: 'audit', element: <AuditPage/> },
         { path: 'notifications', element: <NotificationsPage/> }, { path: 'profile', element: <ProfilePage/> }, { path: 'access', element: <AccessPage area="admin"/> },
-        { index: true, element: <Navigate to="/admin/services" replace/> },
+        { index: true, element: <Navigate to="/admin/dashboard" replace/> },
         { element: <ProtectedRoute roles={[UserRole.SUPER_ADMIN]}/>, children: [
-          { path: 'boards', element: <BoardsPage/> }, { path: 'boards/:id', element: <BoardRoute/> }, { path: 'tickets', element: <StaffTicketsPage key="all"/> }, { path: 'tickets/mine', element: <StaffTicketsPage key="mine" assignedToMe/> }, { path: 'tickets/:id', element: <StaffTicketDetailRoute/> }, { path: 'dashboard', element: <TicketDashboardPage/> }, { path: 'users', element: <UsersPage/> }, { path: 'audit', element: <AuditPage/> },
+          { path: 'users', element: <UsersPage/> },
         ] },
       ] },
     ] },

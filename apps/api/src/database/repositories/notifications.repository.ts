@@ -10,7 +10,7 @@ const projection = { id:notifications.id, type:notifications.type, title:notific
 @Injectable()
 export class NotificationsRepository {
   constructor(private readonly database: DatabaseService, private readonly boardRepo: BoardsRepository, private readonly staff: StaffTicketsRepository) {}
-  activeSuperAdministratorsExcept(actorId: string) { return this.database.db.select({ id: users.id }).from(users).where(and(eq(users.role, UserRole.SUPER_ADMIN), eq(users.isActive, true), ne(users.id, actorId))).all(); }
+  activeAdministratorsExcept(actorId: string) { return this.database.db.select({ id: users.id }).from(users).where(and(inArray(users.role, [UserRole.ADMIN, UserRole.SUPER_ADMIN]), eq(users.isActive, true), ne(users.id, actorId))).all(); }
   create(input: Omit<typeof notifications.$inferInsert, 'id'>) { return this.database.db.insert(notifications).values({ id: randomUUID(), ...input }).returning().get()!; }
   persisted(id:string, userId:string) { return !!this.database.db.select({ id:notifications.id }).from(notifications).where(and(eq(notifications.id,id),eq(notifications.userId,userId))).get(); }
   private scope(user:User) {

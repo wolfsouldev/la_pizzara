@@ -5,6 +5,7 @@ import { DepartmentsRepository } from '../../database/repositories/departments.r
 @Injectable()
 export class DepartmentAccessPolicy {
   constructor(private readonly departments: DepartmentsRepository) {}
+  assertAdmin(user: User) { if (!isAdminRole(user.role)) throw new ForbiddenException('Solo administradores pueden acceder a esta sección'); }
   assertManage(user: User) { if (!isAdminRole(user.role)) throw new ForbiddenException('Solo administradores pueden gestionar departamentos'); }
   assertSuperAdmin(user: User) { if (user.role !== UserRole.SUPER_ADMIN) throw new ForbiddenException('Solo superadministradores pueden gestionar accesos sensibles'); }
   assertRead(user: User, id: string) {

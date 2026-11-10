@@ -78,14 +78,14 @@ Después: rediseño oscuro, sidebar responsive, marca/iconos/favicon, vistas Kan
 
 ## 5. Identidad, sesiones y seguridad: no romper
 
-- Roles globales: `USER`, `TECHNICIAN`, `ADMIN`, `SUPER_ADMIN`. En LDAP, pertenecer a `Domain Admins` (membresía directa o grupo primario RID 512) da `ADMIN`; las demás cuentas, incluidas las de `Domain Users`, son `USER`, salvo un `TECHNICIAN` ya establecido. `SUPER_ADMIN` se concede solo por CLI, no por grupo AD ni por endpoint web.
+- Roles globales: `USER`, `TECHNICIAN`, `ADMIN`, `SUPER_ADMIN`. En LDAP, pertenecer a `Domain Admins` (membresía directa o grupo primario RID 512) da `ADMIN`; las demás cuentas, incluidas las de `Domain Users`, son `USER`, salvo un `TECHNICIAN` ya establecido. `SUPER_ADMIN` se concede solo por CLI, no por grupo AD ni por endpoint web. ADMIN ve el Help Desk y los tableros globalmente; solo SUPER_ADMIN administra cuentas y pertenencias departamentales.
 - Usuarios institucionales aparecen al iniciar sesión correctamente. Identidad estable AD por `objectGUID`, no por correo o nombre de usuario.
 - En cada login LDAP se deriva `ADMIN`/`USER` de `Domain Admins` y se reconcilia también durante sesiones activas; `SUPER_ADMIN` permanece como elevación manual y se conserva `TECHNICIAN` ya establecido salvo que la cuenta pertenezca a `Domain Admins`. La sincronización de atributos conserva pertenencias y el bloqueo local.
 - LDAPS verifica certificado, cadena y FQDN. Cuenta de lectura busca coincidencia única; otra conexión cifrada valida el bind del usuario. Se cierran conexiones al terminar.
 - Hay comprobación periódica del estado de la cuenta AD. Si caduca la comprobación y no se puede validar el directorio, se falla de forma segura.
 - Las contraseñas AD no se persisten. No introducir `rejectUnauthorized: false`, `NODE_TLS_REJECT_UNAUTHORIZED=0` ni LDAP simple.
 - Sesiones propias: token de 32 bytes y hash SHA-256 en SQLite. Cookie `uni.sid` local y `__Host-uni.sid` en producción; HttpOnly, SameSite=Lax, Secure en producción, Path=/, sin Domain.
-- Inactividad predeterminada 8 horas y duración absoluta 24. Logout revoca; cambios de privilegios invalidan sesiones.
+- Inactividad predeterminada 168 horas (7 días) y duración absoluta 168 horas. Lecturas/polling no renuevan inactividad; las acciones de negocio explícitas sí. Logout revoca; cambios de privilegios invalidan sesiones.
 - Mutaciones protegidas con origen estricto y token CSRF; no almacenar tokens de sesión en localStorage.
 - Proxy de confianza restringido al Caddy configurado; nunca confiar indiscriminadamente en proxies.
 - No permitir degradar/desactivar al último `ADMIN` activo. `SUPER_ADMIN` se concede solo por CLI y no se puede modificar desde la web.
@@ -106,7 +106,7 @@ Requiere desarrollo, proveedor local, API loopback, origen local y habilitación
 - Categoría activa determina departamento; solicitante sale de sesión. Inicialmente `OPEN`, prioridad `NORMAL`, sin responsable.
 - Número público `UNI-000001` correlativo transaccional; UUID técnico separado.
 - Portal propio limitado al solicitante, incluso si quien lo usa tiene rol ADMIN/TECHNICIAN/SUPER_ADMIN. El personal utiliza endpoints internos distintos.
-- Técnicos consultan solo sus departamentos. Las mutaciones de atención exigen las condiciones de responsabilidad correspondientes; `SUPER_ADMIN` asigna/reasigna y cambia departamento. ADMIN ordinario no accede a la bandeja interna.
+- Técnicos consultan solo sus departamentos. ADMIN/SUPER_ADMIN ven todos los tickets; ADMIN y técnicos solo editan los que tienen asignados, mientras SUPER_ADMIN conserva edición global. ADMIN/SUPER_ADMIN asignan tickets a técnicos elegibles o administradores activos; solo SUPER_ADMIN cambia departamento/categoría.
 - Estados: `OPEN`, `ASSIGNED`, `IN_PROGRESS`, `WAITING_USER`, `RESOLVED`, `CLOSED`. Prioridades: `LOW`, `NORMAL`, `HIGH`, `URGENT`.
 - Cerrado es de solo lectura. El solicitante puede cerrar un resuelto o reabrirlo dentro de siete días desde resolución; no reabre un cerrado.
 - Comentario del solicitante en `WAITING_USER` cambia a `IN_PROGRESS`.
@@ -116,12 +116,13 @@ Requiere desarrollo, proveedor local, API loopback, origen local y habilitación
 ### Tableros y tareas
 
 - `VIEW`: lectura; `EDIT`: crear/editar/mover/comentar; `MANAGE`: además configurar columnas, miembros y categorías. `SUPER_ADMIN` tiene acceso global.
-- Pertenecer al departamento no concede acceso al tablero: técnico necesita pertenencia explícita elegible. USER y ADMIN ordinario no acceden a datos internos.
+- Pertenecer al departamento no concede acceso al tablero: técnico necesita pertenencia explícita elegible. ADMIN/SUPER_ADMIN tienen alcance global MANAGE; USER no accede a datos internos.
 - Columnas iniciales: Pendiente, En progreso, En revisión, Completado. No eliminar una columna con tareas, incluidas archivadas.
 - La columna representa el estado de tarea: no añadir un segundo `status` independiente.
 - Movimientos/reordenamiento transaccionales, posiciones enteras espaciadas y normalización. El backend devuelve el orden canónico; React hace mutación optimista con rollback.
 - No aceptar `boardId`, `columnId` o `position` arbitrarios desde PATCH genérico. No mover entre tableros mediante el movimiento ordinario.
-- Responsables elegibles del tablero; los técnicos necesitan pertenencia correspondiente y la aplicación restringe las tareas internas a técnicos autorizados y `SUPER_ADMIN`.
+- Responsables del tablero: técnicos activos del departamento, ADMIN y SUPER_ADMIN activos; todos deben incorporarse como miembros explícitos antes de asignarles tareas. ADMIN y SUPER_ADMIN tienen alcance global MANAGE.
+- ADMIN/SUPER_ADMIN pueden incorporar cuentas ADMIN al tablero; técnicos con MANAGE no pueden enumerarlas ni incorporarlas. USER nunca entra a datos internos.
 - Archivado conserva historial y deja recursos de solo lectura, con excepciones explícitas para revocar acceso/desvincular.
 - Tickets y tareas pueden vincularse muchos-a-muchos solo dentro del mismo departamento, con acceso a ambos recursos y permisos de escritura. Trasladar ticket con vínculos incompatibles devuelve conflicto.
 - Notificaciones pertenecen a su destinatario y vuelven a comprobar acceso a recursos privados.
@@ -223,7 +224,7 @@ mise exec node@24.15.0 -- pnpm dev
 mise exec node@24.15.0 -- pnpm --filter api superadmin:promote --username desarrollo
 ```
 
-La promoción `SUPER_ADMIN` exige confirmar el usuario exacto, audita y revoca sesiones; volver a entrar. La web no puede asignar ni modificar SUPER_ADMIN. `ADMIN` ordinario administra departamentos, categorías y estado público de servicios; usuarios/roles, auditoría, bandeja interna, tableros privados y notas internas requieren SUPER_ADMIN. Técnicos conservan su alcance por departamentos y permisos explícitos.
+La promoción `SUPER_ADMIN` exige confirmar el usuario exacto, audita y revoca sesiones; volver a entrar. La web no puede asignar ni modificar SUPER_ADMIN. ADMIN dispone de alcance global para tickets y tableros, auditoría, administración de departamentos/categorías/servicios y notas internas; puede asignar tickets a técnicos elegibles o ADMIN activos y editar los asignados a su cuenta. Usuarios/roles/activación, pertenencias departamentales y cambios de departamento del ticket siguen reservados a SUPER_ADMIN. Técnicos conservan su alcance por departamentos y permisos explícitos.
 
 - SPA: `http://localhost:5173`.
 - API: `http://127.0.0.1:3000/api/v1`.

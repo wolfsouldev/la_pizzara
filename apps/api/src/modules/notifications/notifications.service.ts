@@ -10,7 +10,7 @@ export class NotificationsService {
   constructor(private readonly notifications: NotificationsRepository, private readonly realtime: NotificationRealtimeService) {}
   private create(input: Parameters<NotificationsRepository['create']>[0]) { const row=this.notifications.create(input);this.realtime.afterInsert(row.id,row.userId); }
   private dto(user:User,row:NonNullable<ReturnType<NotificationsRepository['get']>>) {
-    const {boardId,...data}=row;const area=user.role==='SUPER_ADMIN'?'admin':user.role==='ADMIN'?'app':'staff';
+    const {boardId,...data}=row;const area=user.role==='SUPER_ADMIN'||user.role==='ADMIN'?'admin':'staff';
     const publicTicket=['TICKET_PUBLIC_REPLY','TICKET_STATUS_CHANGED'].includes(row.type);
     return {...data,href:row.resourceType==='task'&&boardId?`/${area}/boards/${boardId}?taskId=${row.resourceId}`:row.resourceType==='ticket'?`/${publicTicket?'app':area}/tickets/${row.resourceId}`:null};
   }
@@ -29,6 +29,6 @@ export class NotificationsService {
   }
   taskAssigned(task: TaskRow, userId: string, actorId: string, now: number) { if (userId !== actorId) this.create({ userId, type: 'TASK_ASSIGNED', title: 'Nueva tarea asignada', message: task.title, resourceType: 'task', resourceId: task.id, createdAt: now }); }
   ticketCreated(ticket: Ticket, actorId: string, now: number) {
-    for (const user of this.notifications.activeSuperAdministratorsExcept(actorId)) this.create({ userId: user.id, type: 'TICKET_CREATED', title: `Nueva solicitud ${ticketNumber(ticket.ticketNumber)}`, message: ticket.title, resourceType: 'ticket', resourceId: ticket.id, createdAt: now });
+    for (const user of this.notifications.activeAdministratorsExcept(actorId)) this.create({ userId: user.id, type: 'TICKET_CREATED', title: `Nueva solicitud ${ticketNumber(ticket.ticketNumber)}`, message: ticket.title, resourceType: 'ticket', resourceId: ticket.id, createdAt: now });
   }
 }

@@ -6,21 +6,54 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/common/data-view';
 import { priorityLabels, statusLabels } from '@/features/tickets/tickets';
+import { useSession } from '@/features/auth/auth';
 import { useStaffMutation, useStaffOptions } from './staff';
+
 export function StaffTicketActions({ ticket: t }: { ticket: StaffTicketDetail }) {
-  const options = useStaffOptions(); const mutation = useStaffMutation(t.id); const disabled = mutation.isPending;
+  const session = useSession();
+  const options = useStaffOptions();
+  const mutation = useStaffMutation(t.id);
+  const disabled = mutation.isPending;
   const status = useForm<z.infer<typeof ticketStatusChangeSchema>>({ resolver: zodResolver(ticketStatusChangeSchema), defaultValues: { status: t.allowedStatuses[0] } });
   const priority = useForm<z.infer<typeof ticketPriorityChangeSchema>>({ resolver: zodResolver(ticketPriorityChangeSchema), defaultValues: { priority: t.priority } });
   const assignment = useForm<z.infer<typeof ticketAssignmentChangeSchema>>({ resolver: zodResolver(ticketAssignmentChangeSchema), defaultValues: { assignedToId: t.assignee?.id ?? null } });
   const transfer = useForm<z.infer<typeof ticketDepartmentChangeSchema>>({ resolver: zodResolver(ticketDepartmentChangeSchema), defaultValues: { departmentId: t.department.id, categoryId: t.category.id, assignedToId: t.assignee?.id ?? null } });
   const target = transfer.watch('departmentId');
   const send = (operation: string, body: unknown) => mutation.mutate({ operation, method: 'PATCH', body });
+  const canTransfer = session.data?.role === 'SUPER_ADMIN' && t.canEdit;
+
   if (t.status === 'CLOSED') return <p className="rounded-xl border border-border bg-muted p-5 text-sm text-muted-foreground">Ticket cerrado: solo lectura para todos los roles.</p>;
-  if (!t.canEdit) return <p className="rounded-xl border border-border bg-muted p-5 text-sm text-muted-foreground">Puedes consultar este ticket de tu departamento. Debe asignártelo un administrador antes de atenderlo.</p>;
-  return <article className="rounded-xl border border-border bg-card p-5"><h2 className="font-semibold">Gestionar ticket</h2><Notice error={mutation.error} success={mutation.isSuccess && 'Cambio guardado.'}/><fieldset disabled={disabled} className="mt-5 space-y-6">
-    {!!t.allowedStatuses.length && <form onSubmit={status.handleSubmit(v => { if (confirm(`¿Cambiar el estado a «${statusLabels[v.status]}»?`)) send('status', v); })}><label>Nuevo estado<FormSelect control={status.control} name="status">{t.allowedStatuses.map(s => <SelectOption key={s} value={s}>{statusLabels[s]}</SelectOption>)}</FormSelect></label><p className="text-xs text-destructive">{status.formState.errors.status?.message}</p><Button type="submit" className="mt-3">Actualizar estado</Button></form>}
-    <form onSubmit={priority.handleSubmit(v => send('priority', v))}><label>Prioridad<FormSelect control={priority.control} name="priority">{priorities.map(p => <SelectOption key={p} value={p}>{priorityLabels[p]}</SelectOption>)}</FormSelect></label><p className="text-xs text-destructive">{priority.formState.errors.priority?.message}</p><Button type="submit" variant="outline" className="mt-3" disabled={priority.watch('priority') === t.priority}>Guardar prioridad</Button></form>
-    {t.canAssign && <><Notice error={options.error}/><form className="border-t border-border pt-5" onSubmit={assignment.handleSubmit(v => send('assignment', v))}><label>Responsable<FormSelect control={assignment.control} name="assignedToId" emptyAsNull><SelectOption value="">Sin asignar</SelectOption>{t.assignee && !options.data?.assignees.some(m => m.id === t.assignee?.id && m.departmentId === t.department.id) && <SelectOption value={t.assignee.id} disabled>{t.assignee.displayName} (ya no elegible)</SelectOption>}{options.data?.assignees.filter(m => m.departmentId === t.department.id).map(m => <SelectOption key={m.id} value={m.id} disabled={!m.isActive}>{m.displayName}{!m.isActive && ' (inactivo)'}</SelectOption>)}</FormSelect></label><p className="text-xs text-destructive">{assignment.formState.errors.assignedToId?.message}</p><Button type="submit" variant="outline" className="mt-3" disabled={!options.data || assignment.watch('assignedToId') === (t.assignee?.id ?? null)}>Guardar responsable</Button></form>
-    <form className="space-y-3 border-t border-border pt-5" onSubmit={transfer.handleSubmit(v => { if (confirm('¿Reasignar departamento, categoría y responsable? El personal del departamento anterior puede perder acceso.')) send('department', v); })}><h3 className="text-sm font-semibold">Reasignar departamento / categoría</h3><label>Departamento de destino<FormSelect control={transfer.control} name="departmentId" onValueChange={() => { transfer.setValue('categoryId', ''); transfer.setValue('assignedToId', null); }}>{options.data?.departments.filter(d => d.isActive || d.id === t.department.id).map(d => <SelectOption key={d.id} value={d.id} disabled={!d.isActive}>{d.name}{!d.isActive && ' (inactivo)'}</SelectOption>)}</FormSelect></label><label>Categoría de destino<FormSelect control={transfer.control} name="categoryId"><SelectOption value="">Selecciona una categoría activa</SelectOption>{options.data?.categories.filter(c => c.departmentId === target && (c.isActive || c.id === t.category.id)).map(c => <SelectOption key={c.id} value={c.id} disabled={!c.isActive}>{c.name}{!c.isActive && ' (inactiva)'}</SelectOption>)}</FormSelect><span className="text-xs text-destructive">{transfer.formState.errors.categoryId?.message}</span></label><label>Responsable en destino<FormSelect control={transfer.control} name="assignedToId" emptyAsNull><SelectOption value="">Sin asignar</SelectOption>{t.assignee && target === t.department.id && !options.data?.assignees.some(m => m.id === t.assignee?.id && m.departmentId === target && m.isActive) && <SelectOption value={t.assignee.id} disabled>{t.assignee.displayName} (ya no elegible)</SelectOption>}{options.data?.assignees.filter(m => m.departmentId === target && m.isActive).map(m => <SelectOption key={m.id} value={m.id}>{m.displayName}</SelectOption>)}</FormSelect><span className="text-xs text-destructive">{transfer.formState.errors.assignedToId?.message}</span></label><p className="text-xs text-destructive">{transfer.formState.errors.departmentId?.message}</p><Button type="submit" variant="outline" disabled={!options.data}>Aplicar reasignación</Button></form></>}
-  </fieldset></article>;
+  if (!t.canEdit && !t.canAssign) return <p className="rounded-xl border border-border bg-muted p-5 text-sm text-muted-foreground">Puedes consultar este ticket de tu departamento. Debe asignártelo un administrador antes de atenderlo.</p>;
+
+  return <article className="rounded-xl border border-border bg-card p-5">
+    <h2 className="font-semibold">Gestionar ticket</h2>
+    <Notice error={mutation.error} success={mutation.isSuccess && 'Cambio guardado.'}/>
+    {!t.canEdit && t.canAssign && <p className="mt-3 text-sm text-muted-foreground">Puedes asignar este ticket a un técnico elegible o a una cuenta ADMIN. Para atenderlo, asígnatelo primero.</p>}
+    <fieldset disabled={disabled} className="mt-5 space-y-6">
+      {t.canEdit && <>
+        {!!t.allowedStatuses.length && <form onSubmit={status.handleSubmit(v => { if (confirm(`¿Cambiar el estado a «${statusLabels[v.status]}»?`)) send('status', v); })}><label>Nuevo estado<FormSelect control={status.control} name="status">{t.allowedStatuses.map(s => <SelectOption key={s} value={s}>{statusLabels[s]}</SelectOption>)}</FormSelect></label><p className="text-xs text-destructive">{status.formState.errors.status?.message}</p><Button type="submit" className="mt-3">Actualizar estado</Button></form>}
+        <form onSubmit={priority.handleSubmit(v => send('priority', v))}><label>Prioridad<FormSelect control={priority.control} name="priority">{priorities.map(p => <SelectOption key={p} value={p}>{priorityLabels[p]}</SelectOption>)}</FormSelect></label><p className="text-xs text-destructive">{priority.formState.errors.priority?.message}</p><Button type="submit" variant="outline" className="mt-3" disabled={priority.watch('priority') === t.priority}>Guardar prioridad</Button></form>
+      </>}
+      {t.canAssign && <>
+        <Notice error={options.error}/>
+        <form className="border-t border-border pt-5" onSubmit={assignment.handleSubmit(v => send('assignment', v))}>
+          <label>Responsable<FormSelect control={assignment.control} name="assignedToId" emptyAsNull>
+            <SelectOption value="">Sin asignar</SelectOption>
+            {t.assignee && !options.data?.assignees.some(m => m.id === t.assignee?.id && m.departmentId === t.department.id) && <SelectOption value={t.assignee.id} disabled>{t.assignee.displayName} (ya no elegible)</SelectOption>}
+            {options.data?.assignees.filter(m => m.departmentId === t.department.id).map(m => <SelectOption key={m.id} value={m.id} disabled={!m.isActive}>{m.displayName}{!m.isActive && ' (inactivo)'}</SelectOption>)}
+          </FormSelect></label>
+          <p className="text-xs text-destructive">{assignment.formState.errors.assignedToId?.message}</p>
+          <Button type="submit" variant="outline" className="mt-3" disabled={!options.data || assignment.watch('assignedToId') === (t.assignee?.id ?? null)}>Guardar responsable</Button>
+        </form>
+      </>}
+      {canTransfer && <form className="space-y-3 border-t border-border pt-5" onSubmit={transfer.handleSubmit(v => { if (confirm('¿Reasignar departamento, categoría y responsable? El personal del departamento anterior puede perder acceso.')) send('department', v); })}>
+        <h3 className="text-sm font-semibold">Reasignar departamento / categoría</h3>
+        <label>Departamento de destino<FormSelect control={transfer.control} name="departmentId" onValueChange={() => { transfer.setValue('categoryId', ''); transfer.setValue('assignedToId', null); }}>{options.data?.departments.filter(d => d.isActive || d.id === t.department.id).map(d => <SelectOption key={d.id} value={d.id} disabled={!d.isActive}>{d.name}{!d.isActive && ' (inactivo)'}</SelectOption>)}</FormSelect></label>
+        <label>Categoría de destino<FormSelect control={transfer.control} name="categoryId"><SelectOption value="">Selecciona una categoría activa</SelectOption>{options.data?.categories.filter(c => c.departmentId === target && (c.isActive || c.id === t.category.id)).map(c => <SelectOption key={c.id} value={c.id} disabled={!c.isActive}>{c.name}{!c.isActive && ' (inactiva)'}</SelectOption>)}</FormSelect><span className="text-xs text-destructive">{transfer.formState.errors.categoryId?.message}</span></label>
+        <label>Responsable en destino<FormSelect control={transfer.control} name="assignedToId" emptyAsNull><SelectOption value="">Sin asignar</SelectOption>{t.assignee && target === t.department.id && !options.data?.assignees.some(m => m.id === t.assignee?.id && m.departmentId === target && m.isActive) && <SelectOption value={t.assignee.id} disabled>{t.assignee.displayName} (ya no elegible)</SelectOption>}{options.data?.assignees.filter(m => m.departmentId === target && m.isActive).map(m => <SelectOption key={m.id} value={m.id}>{m.displayName}</SelectOption>)}</FormSelect><span className="text-xs text-destructive">{transfer.formState.errors.assignedToId?.message}</span></label>
+        <p className="text-xs text-destructive">{transfer.formState.errors.departmentId?.message}</p>
+        <Button type="submit" variant="outline" disabled={!options.data}>Aplicar reasignación</Button>
+      </form>}
+    </fieldset>
+  </article>;
 }

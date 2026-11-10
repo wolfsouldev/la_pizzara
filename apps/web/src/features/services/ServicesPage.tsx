@@ -13,10 +13,8 @@ import { ServiceCard } from './ServiceCard';
 import { ServiceForm } from './ServiceForm';
 import { ServiceDetail } from './ServiceDetail';
 import { useServices } from './services';
-import { useSession } from '@/features/auth/auth';
 export function ServicesPage({ admin = false }: { admin?: boolean }) {
   const [params, setParams] = useSearchParams(); const [search, setSearch] = useState(params.get('search') ?? '');
-  const session = useSession();
   const status = serviceStatuses.find(s => s === params.get('status'));
   const publication = params.get('publication') === 'archived' ? 'archived' : params.get('publication') === 'all' ? 'all' : 'active';
   const page = Math.max(1, Math.floor(Number(params.get('page')) || 1)); const selected = params.get('service');
@@ -76,6 +74,6 @@ export function ServicesPage({ admin = false }: { admin?: boolean }) {
       <Pager meta={query.data.meta} onPage={p => setParams(previous => { const next = new URLSearchParams(previous); next.set('page', String(p)); return next; })}/>
     </>}
     <Dialog open={editor !== null} onOpenChange={open => { if (!open) setEditor(null); }} title={editor === 'new' ? 'Nuevo servicio' : 'Editar servicio'} description="La descripción y el estado serán visibles para toda la comunidad autenticada.">{editor && <ServiceForm key={editor === 'new' ? 'new' : editor.id} service={editor === 'new' ? undefined : editor} onSaved={() => setEditor(null)}/>}</Dialog>
-    <Dialog open={!!selected} onOpenChange={open => { if (!open) openService(null); }} title="Información del servicio" description={session.data?.role === 'SUPER_ADMIN' ? 'Gestiona las comunicaciones y notas privadas de superadministración.' : admin ? 'Gestiona el estado y la información pública del servicio.' : 'Estado informado y comunicaciones publicadas por administración.'}>{selected && <ServiceDetail key={`${admin}:${selected}`} id={selected} admin={admin} superAdmin={session.data?.role === 'SUPER_ADMIN'}/>}</Dialog>
+    <Dialog open={!!selected} onOpenChange={open => { if (!open) openService(null); }} title="Información del servicio" description={admin ? 'Gestiona la información pública y las notas internas de administración.' : 'Estado informado y comunicaciones publicadas por administración.'}>{selected && <ServiceDetail key={`${admin}:${selected}`} id={selected} admin={admin}/>}</Dialog>
   </section>;
 }

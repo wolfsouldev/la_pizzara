@@ -10,7 +10,6 @@ import { PaginatedResult } from '../../common/pagination';
 export class ServicesService {
   constructor(private readonly services: ServicesRepository, private readonly audit: AuditRepository, private readonly unit: DatabaseUnitOfWork, private readonly tickets: TicketAccessPolicy) {}
   private admin(user: User) { if (user.role !== UserRole.ADMIN && user.role !== UserRole.SUPER_ADMIN) throw new ForbiddenException('Solo administración puede gestionar los servicios'); }
-  private superAdmin(user: User) { if (user.role !== UserRole.SUPER_ADMIN) throw new ForbiddenException('Las notas internas son exclusivas de superadministradores'); }
   get(id: string, admin = false) { const row = this.services.get(id); if (!row || (!admin && !row.isActive)) throw new NotFoundException('Servicio no encontrado'); return row; }
   requireActive(id: string) { const row = this.services.get(id); if (!row || !row.isActive) throw new ConflictException('El servicio no está disponible en el catálogo'); return row; }
   list(q: ServiceList) { return new PaginatedResult(this.services.list(q, false), q); }
@@ -27,11 +26,11 @@ export class ServicesService {
     this.audit.record(user.id, 'SERVICE_UPDATED', 'service', id, { fields: Object.keys(input), fromStatus: previous.status, toStatus: row.status, isActive: row.isActive }); return row;
   }); }
   notes(id: string, q: { page: number; limit: number }) { this.get(id); return new PaginatedResult(this.services.notes(id, q, false), q); }
-  adminNotes(user: User, id: string, q: { page: number; limit: number }) { this.admin(user); this.get(id, true); return new PaginatedResult(this.services.notes(id, q, user.role === UserRole.SUPER_ADMIN), q); }
-  addNote(user: User, id: string, input: ServiceNoteCreate) { this.superAdmin(user); return this.unit.run(() => {
+  adminNotes(user: User, id: string, q: { page: number; limit: number }) { this.admin(user); this.get(id, true); return new PaginatedResult(this.services.notes(id, q, true), q); }
+  addNote(user: User, id: string, input: ServiceNoteCreate) { this.admin(user); return this.unit.run(() => {
     this.get(id, true); const row = this.services.addNote(id, user.id, input, Date.now()); this.audit.record(user.id, 'SERVICE_NOTE_ADDED', 'service', id, { noteId: row.id, visibility: row.visibility }); return row;
   }); }
-  deleteNote(user: User, id: string, noteId: string) { this.superAdmin(user); return this.unit.run(() => {
+  deleteNote(user: User, id: string, noteId: string) { this.admin(user); return this.unit.run(() => {
     this.get(id, true); const note = this.services.deleteNote(id, noteId); if (!note) throw new NotFoundException('Nota no encontrada');
     this.audit.record(user.id, 'SERVICE_NOTE_DELETED', 'service', id, { noteId, visibility: note.visibility }); return { ok: true };
   }); }

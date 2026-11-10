@@ -9,14 +9,12 @@ fecha del estado y notas, sin presentar disponibilidad inventada.
 
 - Sidebar **Estado de servicios**: `/app/services`, `/staff/services` y
   `/admin/services`. Todas las personas autenticadas consultan; ADMIN y
-  SUPER_ADMIN administran el catálogo. Las notas internas son exclusivas de
-  SUPER_ADMIN.
+  SUPER_ADMIN administran el catálogo y las notas internas.
 - Tarjetas adaptables con búsqueda por nombre, filtro de estado, descripción,
   última nota pública y fecha del estado. Ficha con descripción completa e
   historial paginado. Filtros/página/ficha en URL (`?service=<uuid>`).
-- ADMIN y SUPER_ADMIN: **Nuevo servicio**, editar nombre/descripción/estado y
-  archivar/restaurar. SUPER_ADMIN añade o elimina notas públicas/internas; ADMIN
-  solo consulta notas públicas.
+- ADMIN y SUPER_ADMIN: **Nuevo servicio**, editar nombre/descripción/estado,
+  archivar/restaurar y añadir/eliminar notas públicas o internas.
 - Estados: Operativo, Con incidencias, No disponible, En mantenimiento y
   **Sin confirmar**. Este último es el predeterminado: crear un registro no
   acredita que el servicio esté funcionando.
@@ -31,9 +29,8 @@ sin integrar ese producto ni copiar métricas de disponibilidad.
 
 ## Privacidad y permisos
 
-Notas `PUBLIC`: toda la comunidad **autenticada**. Notas `INTERNAL`: exclusivamente
-SUPER_ADMIN, **no ADMIN ordinario ni TECHNICIAN**, incluso si el técnico atiende
-un ticket del servicio. El formulario de notas inicia en interna para evitar
+Notas `PUBLIC`: toda la comunidad **autenticada**. Notas `INTERNAL`: ADMIN y
+SUPER_ADMIN; nunca son visibles para USER ni TECHNICIAN. El formulario de notas inicia en interna para evitar
 publicar contenido por accidente. Publicar exige seleccionar explícitamente la
 visibilidad pública.
 
@@ -54,9 +51,10 @@ de categoría/departamento. Puede elegirse al crear la solicitud o desde su deta
 formulario con ese servicio preseleccionado; la API vuelve a comprobarlo.
 
 - Portal propio: únicamente el solicitante, incluso si tiene rol ADMIN.
-- Atención: SUPER_ADMIN o técnico del departamento. Modificar exige SUPER_ADMIN
-  o técnico responsable. ADMIN ordinario no accede a la bandeja interna. La
-  relación no otorga acceso a un ticket.
+- Atención: ADMIN/SUPER_ADMIN globales o técnico de su departamento. Modificar
+  exige que el ticket esté asignado al ADMIN/técnico, o actuar como
+  SUPER_ADMIN. ADMIN/SUPER_ADMIN pueden asignar tickets a responsables
+  elegibles. La relación no otorga acceso a un ticket.
 - Cerrado: vínculo de solo lectura (409 al intentar modificarlo).
 - Archivar un servicio lo retira del catálogo y bloquea nuevos vínculos (409),
   pero conserva relaciones existentes. Sus tickets muestran nombre/estado/fecha
@@ -75,9 +73,9 @@ Contrato REST v1.11 en `postman/specs/platform.openapi.json`:
 | GET `/services`, `/services/:id`, `/services/:id/notes` | Autenticado; activos y notas públicas |
 | GET/POST `/admin/services` | ADMIN o SUPER_ADMIN |
 | GET/PATCH `/admin/services/:id` | ADMIN o SUPER_ADMIN; archivo/restauración por `isActive` |
-| GET `/admin/services/:id/notes` | ADMIN o SUPER_ADMIN; ADMIN solo recibe notas públicas, SUPER_ADMIN también internas |
-| POST `/admin/services/:id/notes` | SUPER_ADMIN |
-| DELETE `/admin/services/:id/notes/:noteId` | SUPER_ADMIN; comprueba el servicio de la nota |
+| GET `/admin/services/:id/notes` | ADMIN o SUPER_ADMIN; incluye notas internas |
+| POST `/admin/services/:id/notes` | ADMIN o SUPER_ADMIN |
+| DELETE `/admin/services/:id/notes/:noteId` | ADMIN o SUPER_ADMIN; comprueba el servicio de la nota |
 | GET/PATCH `/tickets/:id/service` | Solo propietario |
 | GET/PATCH `/staff/tickets/:id/service` | Alcance y edición de atención |
 

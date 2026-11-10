@@ -3,7 +3,7 @@
   "info": {
     "title": "Plataforma Universitaria · Fase 8",
     "version": "1.14.0",
-    "description": "Sesiones reales SQLite, credenciales locales o LDAPS, origen estricto y CSRF. Acceso sin credenciales solo en desarrollo habilitado explícitamente y con cuenta local registrada por CLI. Sin registro público ni bootstrap administrativo HTTP. Los límites de peticiones se omiten solo en desarrollo con proveedor local y API enlazada a loopback; siguen activos en producción. Active Directory: Domain Admins (membresía directa o grupo primario RID 512) otorga ADMIN; Domain Users y las demás cuentas reciben USER, salvo un rol TECHNICIAN ya establecido; Domain Users no otorga privilegios administrativos; SUPER_ADMIN solo se concede mediante CLI. ADMIN gestiona la configuración ordinaria, mientras usuarios/auditoría, bandeja interna, tableros privados y notas internas de servicios requieren SUPER_ADMIN (los técnicos conservan su alcance explícito)."
+    "description": "Active Directory: la pertenencia a Domain Admins asigna ADMIN; Domain Users y otras cuentas reciben USER. ADMIN y SUPER_ADMIN tienen alcance global de Help Desk y tableros. ADMIN puede gestionar tickets y tableros; solo SUPER_ADMIN administra cuentas, roles, activación y pertenencias departamentales."
   },
   "servers": [
     {
@@ -2466,7 +2466,7 @@
             }
           }
         ],
-        "description": "Acceso exclusivo de SUPER_ADMIN; auditoría paginada y sin secretos."
+        "description": "ADMIN y SUPER_ADMIN pueden consultar auditoría administrativa paginada y sin secretos. La gestión de cuentas permanece exclusiva de SUPER_ADMIN."
       }
     },
     "/catalog/departments": {
@@ -3598,7 +3598,7 @@
     "/staff/tickets": {
       "get": {
         "summary": "Consultar bandeja de atención autorizada",
-        "description": "SUPER_ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de SUPER_ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF.",
+        "description": "ADMIN/SUPER_ADMIN: alcance global. TECHNICIAN: solo departamentos propios. ADMIN/SUPER_ADMIN pueden asignar tickets a técnicos activos del departamento o a administradores activos; ADMIN y TECHNICIAN editan tickets asignados a su cuenta, mientras SUPER_ADMIN puede editarlos globalmente. Cambiar departamento es exclusivo de SUPER_ADMIN. CLOSED es de solo lectura; las escrituras requieren Origin y CSRF.",
         "operationId": "get_staff_tickets",
         "security": [
           {
@@ -3821,7 +3821,7 @@
     "/staff/tickets/options": {
       "get": {
         "summary": "Consultar filtros y responsables autorizados",
-        "description": "SUPER_ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de SUPER_ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF.",
+        "description": "ADMIN/SUPER_ADMIN: alcance global. TECHNICIAN: solo departamentos propios. ADMIN/SUPER_ADMIN pueden asignar tickets a técnicos activos del departamento o a administradores activos; ADMIN y TECHNICIAN editan tickets asignados a su cuenta, mientras SUPER_ADMIN puede editarlos globalmente. Cambiar departamento es exclusivo de SUPER_ADMIN. CLOSED es de solo lectura; las escrituras requieren Origin y CSRF.",
         "operationId": "get_staff_tickets_options",
         "security": [
           {
@@ -3917,7 +3917,7 @@
     "/staff/tickets/{id}": {
       "get": {
         "summary": "Consultar detalle interno del ticket",
-        "description": "SUPER_ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de SUPER_ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF.",
+        "description": "ADMIN/SUPER_ADMIN: alcance global. TECHNICIAN: solo departamentos propios. ADMIN/SUPER_ADMIN pueden asignar tickets a técnicos activos del departamento o a administradores activos; ADMIN y TECHNICIAN editan tickets asignados a su cuenta, mientras SUPER_ADMIN puede editarlos globalmente. Cambiar departamento es exclusivo de SUPER_ADMIN. CLOSED es de solo lectura; las escrituras requieren Origin y CSRF.",
         "operationId": "get_staff_tickets_id",
         "security": [
           {
@@ -4023,7 +4023,7 @@
     "/staff/tickets/{id}/status": {
       "patch": {
         "summary": "Actualizar status del ticket",
-        "description": "SUPER_ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de SUPER_ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF.",
+        "description": "ADMIN/SUPER_ADMIN: alcance global. TECHNICIAN: solo departamentos propios. ADMIN/SUPER_ADMIN pueden asignar tickets a técnicos activos del departamento o a administradores activos; ADMIN y TECHNICIAN editan tickets asignados a su cuenta, mientras SUPER_ADMIN puede editarlos globalmente. Cambiar departamento es exclusivo de SUPER_ADMIN. CLOSED es de solo lectura; las escrituras requieren Origin y CSRF.",
         "operationId": "patch_staff_tickets_id_status",
         "security": [
           {
@@ -4155,7 +4155,7 @@
     "/staff/tickets/{id}/priority": {
       "patch": {
         "summary": "Actualizar priority del ticket",
-        "description": "SUPER_ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de SUPER_ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF.",
+        "description": "ADMIN/SUPER_ADMIN: alcance global. TECHNICIAN: solo departamentos propios. ADMIN/SUPER_ADMIN pueden asignar tickets a técnicos activos del departamento o a administradores activos; ADMIN y TECHNICIAN editan tickets asignados a su cuenta, mientras SUPER_ADMIN puede editarlos globalmente. Cambiar departamento es exclusivo de SUPER_ADMIN. CLOSED es de solo lectura; las escrituras requieren Origin y CSRF.",
         "operationId": "patch_staff_tickets_id_priority",
         "security": [
           {
@@ -4287,7 +4287,7 @@
     "/staff/tickets/{id}/assignment": {
       "patch": {
         "summary": "Actualizar assignment del ticket",
-        "description": "SUPER_ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de SUPER_ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF.",
+        "description": "ADMIN/SUPER_ADMIN: alcance global. TECHNICIAN: solo departamentos propios. ADMIN/SUPER_ADMIN pueden asignar tickets a técnicos activos del departamento o a administradores activos; ADMIN y TECHNICIAN editan tickets asignados a su cuenta, mientras SUPER_ADMIN puede editarlos globalmente. Cambiar departamento es exclusivo de SUPER_ADMIN. CLOSED es de solo lectura; las escrituras requieren Origin y CSRF.",
         "operationId": "patch_staff_tickets_id_assignment",
         "security": [
           {
@@ -4419,7 +4419,7 @@
     "/staff/tickets/{id}/department": {
       "patch": {
         "summary": "Actualizar department del ticket",
-        "description": "SUPER_ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de SUPER_ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF. Si existen tareas vinculadas, retirar los vínculos antes de cambiar de departamento (409).",
+        "description": "ADMIN/SUPER_ADMIN: alcance global. TECHNICIAN: solo departamentos propios. ADMIN/SUPER_ADMIN pueden asignar tickets a técnicos activos del departamento o a administradores activos; ADMIN y TECHNICIAN editan tickets asignados a su cuenta, mientras SUPER_ADMIN puede editarlos globalmente. Cambiar departamento es exclusivo de SUPER_ADMIN. CLOSED es de solo lectura; las escrituras requieren Origin y CSRF. La reasignación de departamento y categoría conserva las validaciones de tareas vinculadas.",
         "operationId": "patch_staff_tickets_id_department",
         "security": [
           {
@@ -4551,7 +4551,7 @@
     "/staff/tickets/{id}/comments": {
       "get": {
         "summary": "Consultar conversación y notas internas",
-        "description": "SUPER_ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de SUPER_ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF. Conversación persistente del ticket, compartida con el chat. Mantiene permisos, CSRF en escrituras y privacidad pública/interna existentes; los cambios confirmados despiertan clientes autorizados mediante tickets:changed sin payload.",
+        "description": "ADMIN/SUPER_ADMIN: alcance global. TECHNICIAN: solo departamentos propios. ADMIN/SUPER_ADMIN pueden asignar tickets a técnicos activos del departamento o a administradores activos; ADMIN y TECHNICIAN editan tickets asignados a su cuenta, mientras SUPER_ADMIN puede editarlos globalmente. Cambiar departamento es exclusivo de SUPER_ADMIN. CLOSED es de solo lectura; las escrituras requieren Origin y CSRF. Conversación persistente del ticket con visibilidad pública/interna y señales de tiempo real sin contenido privado.",
         "operationId": "get_staff_tickets_id_comments",
         "security": [
           {
@@ -4703,7 +4703,7 @@
       },
       "post": {
         "summary": "Añadir respuesta pública o nota interna",
-        "description": "SUPER_ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de SUPER_ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF. Conversación persistente del ticket, compartida con el chat. Mantiene permisos, CSRF en escrituras y privacidad pública/interna existentes; los cambios confirmados despiertan clientes autorizados mediante tickets:changed sin payload.",
+        "description": "ADMIN/SUPER_ADMIN: alcance global. TECHNICIAN: solo departamentos propios. ADMIN/SUPER_ADMIN pueden asignar tickets a técnicos activos del departamento o a administradores activos; ADMIN y TECHNICIAN editan tickets asignados a su cuenta, mientras SUPER_ADMIN puede editarlos globalmente. Cambiar departamento es exclusivo de SUPER_ADMIN. CLOSED es de solo lectura; las escrituras requieren Origin y CSRF. Conversación persistente del ticket con visibilidad pública/interna y señales de tiempo real sin contenido privado.",
         "operationId": "post_staff_tickets_id_comments",
         "security": [
           {
@@ -4835,7 +4835,7 @@
     "/staff/tickets/{id}/events": {
       "get": {
         "summary": "Consultar historial interno del ticket",
-        "description": "SUPER_ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de SUPER_ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF.",
+        "description": "ADMIN/SUPER_ADMIN: alcance global. TECHNICIAN: solo departamentos propios. ADMIN/SUPER_ADMIN pueden asignar tickets a técnicos activos del departamento o a administradores activos; ADMIN y TECHNICIAN editan tickets asignados a su cuenta, mientras SUPER_ADMIN puede editarlos globalmente. Cambiar departamento es exclusivo de SUPER_ADMIN. CLOSED es de solo lectura; las escrituras requieren Origin y CSRF.",
         "operationId": "get_staff_tickets_id_events",
         "security": [
           {
@@ -4989,7 +4989,7 @@
     "/staff/dashboard": {
       "get": {
         "summary": "Consultar estadísticas reales de tickets (staff)",
-        "description": "SUPER_ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de SUPER_ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF. Solo métricas de tickets; las de tareas quedan para Kanban. Sin asignar y mis asignadas excluyen RESOLVED/CLOSED.",
+        "description": "ADMIN/SUPER_ADMIN consultan métricas globales; TECHNICIAN ve únicamente sus departamentos. El resumen incluye tickets por estado, departamento y prioridad, además de tareas pendientes personales.",
         "operationId": "get_staff_dashboard",
         "security": [
           {
@@ -5085,7 +5085,7 @@
     "/admin/dashboard": {
       "get": {
         "summary": "Consultar estadísticas reales de tickets (admin)",
-        "description": "SUPER_ADMIN: acceso global. TECHNICIAN: solo departamentos propios; mutaciones solo si es responsable. Asignación y cambio de departamento exclusivos de SUPER_ADMIN. CLOSED es de solo lectura. Las escrituras exigen Origin y CSRF. Exclusivo de SUPER_ADMIN. Solo métricas de tickets; no se simulan tareas.",
+        "description": "ADMIN y SUPER_ADMIN consultan el resumen global de tickets universitarios y tareas pendientes personales. No incluye herramientas de administración de cuentas.",
         "operationId": "get_admin_dashboard",
         "security": [
           {
@@ -5239,7 +5239,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -5377,7 +5377,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "201": {
             "description": "Operación correcta",
@@ -5493,7 +5493,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -5613,7 +5613,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -5745,7 +5745,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -5870,7 +5870,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -6017,7 +6017,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "201": {
             "description": "Operación correcta",
@@ -6158,7 +6158,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -6297,7 +6297,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir. Retirar miembros también se permite en tableros archivados para revocar accesos; es la excepción al solo lectura.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "204": {
             "description": "Eliminado"
@@ -6415,7 +6415,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF. Solo ADMIN/SUPER_ADMIN pueden incorporar cuentas ADMIN; las demás personas con MANAGE conservan los candidatos compatibles con su alcance.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -6564,7 +6564,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "201": {
             "description": "Operación correcta",
@@ -6705,7 +6705,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -6844,7 +6844,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "204": {
             "description": "Eliminado"
@@ -6951,7 +6951,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -7098,7 +7098,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -7245,7 +7245,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "201": {
             "description": "Operación correcta",
@@ -7361,7 +7361,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -7481,7 +7481,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -7613,7 +7613,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -7745,7 +7745,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -7867,7 +7867,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "201": {
             "description": "Operación correcta",
@@ -8008,7 +8008,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "204": {
             "description": "Eliminado"
@@ -8118,7 +8118,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -8265,7 +8265,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "201": {
             "description": "Operación correcta",
@@ -8400,7 +8400,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -8547,7 +8547,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "201": {
             "description": "Operación correcta",
@@ -8688,7 +8688,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -8827,7 +8827,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "204": {
             "description": "Eliminado"
@@ -8937,7 +8937,7 @@
             }
           }
         ],
-        "description": "Interno: USER y ADMIN ordinario siempre denegados. SUPER_ADMIN global o TECHNICIAN activo con pertenencia al departamento y al tablero. VIEW lee; EDIT modifica tareas; MANAGE configura miembros/columnas. Tableros/tareas archivados son de solo lectura. Crear tablero exclusivo SUPER_ADMIN. Origen y CSRF obligatorios al escribir.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -9089,7 +9089,7 @@
             }
           }
         ],
-        "description": "Relaciones exclusivamente internas. Lectura exige alcance de ticket y pertenencia al tablero (VIEW). Escritura exige responsable del ticket o SUPER_ADMIN y EDIT del tablero. Solo mismo departamento. Tickets CLOSED no admiten cambios. Altas sobre tarea/tablero archivados rechazadas; retirada de vínculos permitida como revocación privada. Listas paginadas y filtradas en SQL. Nunca aparece en /tickets público.",
+        "description": "Relaciones exclusivamente internas. Lectura requiere alcance autorizado del ticket y permiso VIEW o superior en el tablero. Escritura requiere ticket asignado al técnico/administrador, o SUPER_ADMIN, y permiso EDIT o superior en el tablero. Solo mismo departamento. CLOSED no admite cambios. No se expone al portal público.",
         "responses": {
           "200": {
             "description": "Operación completada",
@@ -9201,7 +9201,7 @@
             }
           }
         ],
-        "description": "Relaciones exclusivamente internas. Lectura exige alcance de ticket y pertenencia al tablero (VIEW). Escritura exige responsable del ticket o SUPER_ADMIN y EDIT del tablero. Solo mismo departamento. Tickets CLOSED no admiten cambios. Altas sobre tarea/tablero archivados rechazadas; retirada de vínculos permitida como revocación privada. Listas paginadas y filtradas en SQL. Nunca aparece en /tickets público.",
+        "description": "Relaciones exclusivamente internas. Lectura requiere alcance autorizado del ticket y permiso VIEW o superior en el tablero. Escritura requiere ticket asignado al técnico/administrador, o SUPER_ADMIN, y permiso EDIT o superior en el tablero. Solo mismo departamento. CLOSED no admite cambios. No se expone al portal público.",
         "responses": {
           "201": {
             "description": "Operación completada",
@@ -9437,7 +9437,7 @@
             }
           }
         ],
-        "description": "Relaciones exclusivamente internas. Lectura exige alcance de ticket y pertenencia al tablero (VIEW). Escritura exige responsable del ticket o SUPER_ADMIN y EDIT del tablero. Solo mismo departamento. Tickets CLOSED no admiten cambios. Altas sobre tarea/tablero archivados rechazadas; retirada de vínculos permitida como revocación privada. Listas paginadas y filtradas en SQL. Nunca aparece en /tickets público.",
+        "description": "Relaciones exclusivamente internas. Lectura requiere alcance autorizado del ticket y permiso VIEW o superior en el tablero. Escritura requiere ticket asignado al técnico/administrador, o SUPER_ADMIN, y permiso EDIT o superior en el tablero. Solo mismo departamento. CLOSED no admite cambios. No se expone al portal público.",
         "responses": {
           "200": {
             "description": "Operación completada",
@@ -9549,7 +9549,7 @@
             }
           }
         ],
-        "description": "Relaciones exclusivamente internas. Lectura exige alcance de ticket y pertenencia al tablero (VIEW). Escritura exige responsable del ticket o SUPER_ADMIN y EDIT del tablero. Solo mismo departamento. Tickets CLOSED no admiten cambios. Altas sobre tarea/tablero archivados rechazadas; retirada de vínculos permitida como revocación privada. Listas paginadas y filtradas en SQL. Nunca aparece en /tickets público.",
+        "description": "Relaciones exclusivamente internas. Lectura requiere alcance autorizado del ticket y permiso VIEW o superior en el tablero. Escritura requiere ticket asignado al técnico/administrador, o SUPER_ADMIN, y permiso EDIT o superior en el tablero. Solo mismo departamento. CLOSED no admite cambios. No se expone al portal público.",
         "responses": {
           "201": {
             "description": "Operación completada",
@@ -10142,7 +10142,7 @@
             }
           }
         ],
-        "description": "VIEW puede consultar. MANAGE administra categorías en tableros activos. EDIT asigna categorías mediante TaskCreate/TaskPatch. Nombre único sin distinguir mayúsculas por tablero, máximo 100 categorías. Eliminar retira asociaciones; nunca elimina tareas. Categorías de otro tablero se rechazan.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -10289,7 +10289,7 @@
             }
           }
         ],
-        "description": "VIEW puede consultar. MANAGE administra categorías en tableros activos. EDIT asigna categorías mediante TaskCreate/TaskPatch. Nombre único sin distinguir mayúsculas por tablero, máximo 100 categorías. Eliminar retira asociaciones; nunca elimina tareas. Categorías de otro tablero se rechazan.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "201": {
             "description": "Operación correcta",
@@ -10430,7 +10430,7 @@
             }
           }
         ],
-        "description": "VIEW puede consultar. MANAGE administra categorías en tableros activos. EDIT asigna categorías mediante TaskCreate/TaskPatch. Nombre único sin distinguir mayúsculas por tablero, máximo 100 categorías. Eliminar retira asociaciones; nunca elimina tareas. Categorías de otro tablero se rechazan.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -10569,7 +10569,7 @@
             }
           }
         ],
-        "description": "VIEW puede consultar. MANAGE administra categorías en tableros activos. EDIT asigna categorías mediante TaskCreate/TaskPatch. Nombre único sin distinguir mayúsculas por tablero, máximo 100 categorías. Eliminar retira asociaciones; nunca elimina tareas. Categorías de otro tablero se rechazan.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "responses": {
           "204": {
             "description": "Eliminado"
@@ -11598,7 +11598,7 @@
     "/admin/services/{id}/notes": {
       "get": {
         "summary": "Historial de notas del servicio",
-        "description": "ADMIN o SUPER_ADMIN. ADMIN recibe solo notas públicas; SUPER_ADMIN también puede consultar las internas.",
+        "description": "ADMIN y SUPER_ADMIN pueden consultar las notas del servicio, incluidas las internas; nunca se devuelven al portal público.",
         "operationId": "get_admin_services_id_notes",
         "security": [
           {
@@ -11748,7 +11748,7 @@
       },
       "post": {
         "summary": "Añadir nota pública o interna",
-        "description": "Solo SUPER_ADMIN. Visibilidad explícita. Una nota interna nunca se devuelve a otros roles.",
+        "description": "ADMIN y SUPER_ADMIN pueden gestionar notas explícitamente públicas o internas. Las internas no se envían a usuarios finales.",
         "operationId": "post_admin_services_id_notes",
         "security": [
           {
@@ -11880,7 +11880,7 @@
     "/admin/services/{id}/notes/{noteId}": {
       "delete": {
         "summary": "Eliminar nota",
-        "description": "Solo SUPER_ADMIN. Comprueba pertenencia de nota al servicio; auditado.",
+        "description": "ADMIN y SUPER_ADMIN pueden eliminar una nota del servicio; operación auditada. Las notas internas nunca se devuelven al portal público.",
         "operationId": "delete_admin_services_id_notes_noteId",
         "security": [
           {
@@ -12255,7 +12255,7 @@
     "/staff/tickets/{id}/service": {
       "get": {
         "summary": "Consultar servicio vinculado",
-        "description": "SUPER_ADMIN o TECHNICIAN con alcance de departamento. DTO sin notas internas.",
+        "description": "ADMIN/SUPER_ADMIN tienen alcance global; TECHNICIAN consulta tickets de sus departamentos. DTO sin notas internas.",
         "operationId": "get_staff_tickets_id_service",
         "security": [
           {
@@ -12359,7 +12359,7 @@
       },
       "patch": {
         "summary": "Vincular o desvincular servicio",
-        "description": "Propietario exclusivamente, o personal con permiso de edición en /staff. Cerrado 409; servicio archivado 409 para nuevo vínculo; null desvincula. Un servicio por ticket; no cambia categoría o departamento. Auditada y transaccional.",
+        "description": "Propietario del ticket o técnico/ADMIN asignado; SUPER_ADMIN global. Cerrado 409; servicio archivado 409 para nuevo vínculo; null desvincula. Un servicio por ticket; auditada y transaccional.",
         "operationId": "patch_staff_tickets_id_service",
         "security": [
           {
@@ -12491,7 +12491,7 @@
     "/tasks/{id}/relations": {
       "get": {
         "summary": "Consultar subtareas y dependencias",
-        "description": "VIEW del tablero. Relaciones del mismo tablero, paginadas e incluidas archivadas. Nunca portal USER.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "tags": [
           "Task planning"
         ],
@@ -12634,7 +12634,7 @@
     "/tasks/{id}/parent": {
       "patch": {
         "summary": "Cambiar tarea principal",
-        "description": "EDIT; mismo tablero, sin autorreferencia o ciclos, padre nuevo no archivado. null separa. No mueve ni completa tareas automáticamente.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "tags": [
           "Task planning"
         ],
@@ -12766,7 +12766,7 @@
     "/tasks/{id}/dependencies": {
       "post": {
         "summary": "Añadir tarea bloqueante",
-        "description": "EDIT, ambas activas del mismo tablero; sin duplicados ni ciclos. Bloqueo informativo por predecesoras en columnas no completadas, incluidas archivadas; no impide mover manualmente.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "tags": [
           "Task planning"
         ],
@@ -12898,7 +12898,7 @@
     "/tasks/{id}/dependencies/{blockingTaskId}": {
       "delete": {
         "summary": "Retirar dependencia",
-        "description": "EDIT de tarea activa; permite retirar predecesora archivada. Auditada y transaccional.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "tags": [
           "Task planning"
         ],
@@ -13014,7 +13014,7 @@
     "/boards/{id}/templates": {
       "get": {
         "summary": "Listar plantillas del tablero",
-        "description": "VIEW; alcance privado del tablero. Sin plantillas globales.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "tags": [
           "Task planning"
         ],
@@ -13164,7 +13164,7 @@
       },
       "post": {
         "summary": "Crear plantilla de tarea",
-        "description": "MANAGE en tablero activo. Nombre único normalizado por tablero, máximo 100 plantillas; checklist máximo 100. No copia conversaciones, vínculos o responsables.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "tags": [
           "Task planning"
         ],
@@ -13296,7 +13296,7 @@
     "/boards/{id}/templates/{templateId}": {
       "patch": {
         "summary": "Editar plantilla",
-        "description": "MANAGE, tablero activo; PATCH parcial. No cambia tareas creadas anteriormente.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "tags": [
           "Task planning"
         ],
@@ -13435,7 +13435,7 @@
       },
       "delete": {
         "summary": "Eliminar plantilla",
-        "description": "MANAGE, tablero activo. Conserva tareas creadas desde ella.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "tags": [
           "Task planning"
         ],
@@ -13551,7 +13551,7 @@
     "/boards/{id}/templates/{templateId}/tasks": {
       "post": {
         "summary": "Crear tarea desde plantilla",
-        "description": "EDIT, plantilla del mismo tablero. Columna obligatoria; omitir campos usa valores de plantilla. dueInDays suma periodos de 24 horas al momento de creación; dueAt explícito incluido null prevalece. Checklist nuevo sin completar, todo transaccional.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "tags": [
           "Task planning"
         ],
@@ -13692,7 +13692,7 @@
     "/tasks/{id}/template": {
       "post": {
         "summary": "Guardar tarea como plantilla",
-        "description": "MANAGE del tablero activo. Copia título, descripción, prioridad y títulos de checklist (máximo 100, todos sin completar al aplicar); no copia fechas absolutas, conversaciones, responsables, subtareas, dependencias o tickets.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
         "tags": [
           "Task planning"
         ],
@@ -15605,6 +15605,7 @@
             "type": "string",
             "enum": [
               "SUPER_ADMIN",
+              "ADMIN",
               "TECHNICIAN"
             ]
           }

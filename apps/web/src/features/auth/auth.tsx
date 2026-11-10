@@ -4,7 +4,7 @@ import { roleMatches, UserRole, sessionUserSchema } from '@uni/shared';
 import { api, ApiError, setCsrfToken } from '@/lib/api-client';
 import { SessionStatusPage } from './SessionStatusPage';
 
-export const homeFor = (role: UserRole) => role === UserRole.SUPER_ADMIN ? '/admin/dashboard' : role === UserRole.ADMIN ? '/admin/services' : role === UserRole.TECHNICIAN ? '/staff/dashboard' : '/app/tickets';
+export const homeFor = (role: UserRole) => role === UserRole.SUPER_ADMIN || role === UserRole.ADMIN ? '/admin/dashboard' : role === UserRole.TECHNICIAN ? '/staff/dashboard' : '/app/tickets';
 export function useSession() {
   return useQuery({ queryKey: ['session'], queryFn: async () => {
     try {

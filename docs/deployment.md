@@ -150,9 +150,15 @@ Si se utiliza una instalación rootless/userns-remap/SELinux, adaptar permisos/b
 
 La CLI muestra la identidad/proveedor y exige confirmar exactamente el username. Registra auditoría, revoca sesiones y exige volver a iniciar sesión. Para un checkout no contenedorizado: `pnpm --filter api superadmin:promote --username "$INSTITUTIONAL_USERNAME"`.
 
-3. `ADMIN` administra departamentos, categorías y el estado público de servicios. Solo `SUPER_ADMIN` puede administrar usuarios/roles/activación, consultar auditoría, ver la bandeja interna completa, tableros privados y notas internas de servicios. Los técnicos mantienen acceso limitado por departamento y pertenencia explícita a tableros.
-4. Volver a iniciar sesión y validar permisos con una cuenta ADMIN común, otra TECHNICIAN y la cuenta SUPER_ADMIN: rutas/API sensibles deben denegar ADMIN común; el usuario sigue limitado a sus propias solicitudes.
+3. `ADMIN` administra el Help Desk global (bandeja, resumen, asignaciones), tableros, auditoría, departamentos, categorías, servicios y notas internas. Puede asignar tickets a técnicos activos del departamento o a cuentas ADMIN activas; puede editar tickets asignados a su cuenta. Solo `SUPER_ADMIN` administra cuentas/roles/activación y pertenencias departamentales, y cambia el departamento/categoría de los tickets. Los técnicos mantienen acceso limitado por departamento y pertenencia explícita a tableros.
+4. Volver a iniciar sesión y validar permisos con una cuenta ADMIN común, otra TECHNICIAN y la cuenta SUPER_ADMIN: ADMIN debe ver bandeja/resumen y tableros globales, pero recibir denegación en gestión de cuentas/roles/activación y pertenencias departamentales; TECHNICIAN sigue limitado por departamento/tablero y USER a sus propias solicitudes.
 5. Reiniciar/recrear servicios y comprobar que se conservan los datos. Cerrar sesión y comprobar que ya no accede con la cookie anterior. Validar restricciones de red desde fuera de LAN/VPN.
+
+Las sesiones nuevas duran como máximo una semana (`SESSION_IDLE_HOURS=168` y
+`SESSION_ABSOLUTE_HOURS=168`). Las lecturas y comprobaciones de fondo no
+renuevan la inactividad; las acciones explícitas de negocio sí. Las sesiones
+ya emitidas conservan su vencimiento absoluto anterior: cada usuario debe volver
+a iniciar sesión para recibir el nuevo plazo.
 
 Estos pasos necesitan AD y red reales: **no se marcan completados por un health 200 local**.
 

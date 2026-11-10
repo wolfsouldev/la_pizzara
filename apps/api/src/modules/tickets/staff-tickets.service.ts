@@ -21,7 +21,7 @@ export class StaffTicketsService {
   }
   detail(user: User, id: string): StaffTicketDetail {
     const { ticket: t, department, category, requester, assignee } = this.policy.requireStaff(user, id);
-    return { id: t.id, ticketNumber: t.ticketNumber, publicNumber: ticketNumber(t.ticketNumber), title: t.title, description: t.description, department, category, requester, assignee, priority: t.priority, status: t.status, assignedAt: t.assignedAt, resolvedAt: t.resolvedAt, closedAt: t.closedAt, createdAt: t.createdAt, updatedAt: t.updatedAt, canEdit: this.policy.canEdit(user, t), canAssign: user.role === 'SUPER_ADMIN' && t.status !== 'CLOSED', allowedStatuses: this.allowed(user, t) };
+    return { id: t.id, ticketNumber: t.ticketNumber, publicNumber: ticketNumber(t.ticketNumber), title: t.title, description: t.description, department, category, requester, assignee, priority: t.priority, status: t.status, assignedAt: t.assignedAt, resolvedAt: t.resolvedAt, closedAt: t.closedAt, createdAt: t.createdAt, updatedAt: t.updatedAt, canEdit: this.policy.canEdit(user, t), canAssign: (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') && t.status !== 'CLOSED', allowedStatuses: this.allowed(user, t) };
   }
   comments(user: User, id: string, q: TicketCommentsQuery) { this.policy.requireStaff(user, id); return new PaginatedResult(this.staff.comments(user, id, q), q); }
   events(user: User, id: string, q: TicketCommentsQuery) { this.policy.requireStaff(user, id); return new PaginatedResult(this.staff.events(user, id, q), q); }
@@ -46,7 +46,7 @@ export class StaffTicketsService {
       const now = Date.now(); this.staff.update(user, id, { priority }, now); this.record(user, id, 'PRIORITY_CHANGED', 'TICKET_PRIORITY_CHANGED', now, { fromPriority: t.priority, toPriority: priority }); return this.detail(user, id);
     });
   }
-  private assertAssignee(id: string | null, departmentId: string) { if (id && !this.staff.eligibleAssignee(id, departmentId)) throw new ConflictException('El responsable debe ser un técnico activo del departamento'); }
+  private assertAssignee(id: string | null, departmentId: string) { if (id && !this.staff.eligibleAssignee(id, departmentId)) throw new ConflictException('El responsable debe ser un técnico activo del departamento o un administrador activo'); }
   assignment(user: User, id: string, assignedToId: string | null) {
     this.policy.assertAdmin(user);
     return this.unit.run(() => {
@@ -60,7 +60,7 @@ export class StaffTicketsService {
     });
   }
   department(user: User, id: string, input: TicketDepartmentChange) {
-    this.policy.assertAdmin(user);
+    this.policy.assertSuperAdmin(user);
     return this.unit.run(() => {
       const { ticket: t } = this.policy.requireStaff(user, id); this.policy.assertWritable(t);
       if (t.departmentId !== input.departmentId && this.tickets.hasTaskLinks(id)) throw new ConflictException('Retira los vínculos con tareas antes de cambiar de departamento');

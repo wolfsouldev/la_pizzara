@@ -4,7 +4,7 @@
 
 ### Roles institucionales
 
-En LDAP, pertenecer a `Domain Admins` (membresía directa o grupo primario RID 512) asigna `ADMIN`; las cuentas `Domain Users` y las demás reciben `USER`, salvo un rol `TECHNICIAN` ya establecido. `Domain Users` no concede privilegios administrativos. `SUPER_ADMIN` se concede solo desde la CLI del servidor. ADMIN gestiona departamentos, categorías y el estado público de servicios; usuarios/roles, auditoría, bandeja interna, tableros privados y notas internas requieren SUPER_ADMIN.
+En LDAP, pertenecer a `Domain Admins` (membresía directa o grupo primario RID 512) asigna `ADMIN`; las cuentas `Domain Users` y las demás reciben `USER`, salvo un rol `TECHNICIAN` ya establecido. `Domain Users` no concede privilegios administrativos. `SUPER_ADMIN` se concede solo desde la CLI del servidor. ADMIN tiene alcance global a tickets, resumen, tableros, auditoría, departamentos, categorías, servicios y notas internas; puede asignar tickets a técnicos elegibles o administradores, pero solo edita tickets asignados a su cuenta. La gestión de cuentas, roles, activación y pertenencias departamentales sigue reservada a `SUPER_ADMIN`.
 
 ## Marca visual
 
@@ -12,7 +12,7 @@ El producto se presenta como **La Pizzara**. Isotipo, favicon SVG, iconos para m
 
 ## Entrar y mirar ahora
 
-Abre **http://localhost:5173** y pulsa **Entrar en desarrollo** si el acceso está habilitado y existe una cuenta local. Esta máquina registró desarrollo por CLI y le asignó ADMIN en una sesión previa; este checkout no modifica ni garantiza SQLite. Una cuenta ADMIN común no ve la bandeja interna ni las áreas sensibles. Para probarlas, eleva la cuenta con superadmin:promote después de iniciar sesión una vez. El botón crea una sesión real persistida en SQLite, sin pedir contraseña.
+Abre **http://localhost:5173** y pulsa **Entrar en desarrollo** si el acceso está habilitado y existe una cuenta local. Esta máquina registró desarrollo por CLI y le asignó ADMIN en una sesión previa; este checkout no modifica ni garantiza SQLite. ADMIN puede probar la bandeja global y los tableros; para probar la gestión de cuentas y pertenencias departamentales, promueve una cuenta con `superadmin:promote` después de iniciar sesión una vez. El botón crea una sesión real persistida en SQLite, sin pedir contraseña.
 
 Este acceso requiere una habilitación explícita en el `.env` ignorado por Git. No es un registro público ni desactiva los Guards. Solo funciona en desarrollo con autenticación local, API en loopback y origen local. Está prohibido en producción. El ejemplo distribuido lo deja **apagado**.
 
@@ -21,7 +21,7 @@ Ya hay panel de atención, resumen operativo de tickets y Kanban privado. Los ti
 ## Notificaciones en vivo (fase 8)
 
 - La campana muestra el contador de no leídas y los últimos cinco avisos. **Ver todas** abre historial paginado, filtro de no leídas y marcado individual o global. El enlace abre el ticket público/interno o la tarea autorizada.
-- Se notifican nuevas solicitudes a superadministradores, asignaciones de tickets/tareas y respuestas públicas/cambios de estado al solicitante. No hay avisos al propio autor ni notas internas enviadas al usuario final.
+- Se notifican nuevas solicitudes a administradores activos, asignaciones de tickets/tareas y respuestas públicas/cambios de estado al solicitante. No hay avisos al propio autor ni notas internas enviadas al usuario final.
 - Una sesión conectada recibe una señal WebSocket inmediata; React recupera el contenido por HTTP autenticado. Sin recargar la página. Al reconectar recupera los avisos perdidos; cada 30 segundos también reconcilia permisos/conteos desde SQLite.
 - Las notificaciones de recursos privados dejan de mostrarse al perder acceso al tablero/departamento o cambiar de rol. Contador y marcado aplican el mismo alcance en SQL.
 - El dashboard conserva las métricas de tickets y añade tus tareas pendientes reales; actualiza con avisos y cada 30 segundos.
@@ -102,20 +102,20 @@ Para deshabilitar el botón, configura `DEV_ACCESS_ENABLED=false` y reinicia. El
 - Web: http://localhost:5173.
 - API: http://127.0.0.1:3000/api/v1.
 - Swagger: http://127.0.0.1:3000/api/docs (solo desarrollo).
-- Inicio según rol: `/app/tickets` para USER; `/staff/dashboard` o `/admin/dashboard` para técnicos y superadministradores.
+- Inicio según rol: `/app/tickets` para USER; `/staff/dashboard` para TECHNICIAN y `/admin/dashboard` para ADMIN/SUPER_ADMIN.
 - Solicitudes propias para cualquier rol: `/app/tickets`, `/app/tickets/new`, `/app/tickets/:id`.
 - Atención: `/staff/tickets`, `/staff/tickets/:id` o sus equivalentes `/admin/tickets` y `/admin/tickets/:id`.
 - Administración: `/admin/departments`, `/admin/categories`, `/admin/users` y `/admin/audit`.
 - Notificaciones: `/app/notifications`, `/staff/notifications`, `/admin/notifications`.
 - Comprobación de permisos: `/staff/access` (técnicos/admin) y `/admin/access` (admin).
 
-USER abre sus tickets; TECHNICIAN y SUPER_ADMIN acceden a la atención interna según su alcance. Vite proxifica `/api`, de modo que el navegador usa un mismo origen para cookies y CSRF. No abras la SPA con otro host sin cambiar `APP_ORIGIN`. No publiques el acceso de desarrollo en LAN/VPN ni mediante un túnel o reverse proxy.
+USER abre sus tickets; TECHNICIAN atiende los departamentos propios; ADMIN y SUPER_ADMIN acceden globalmente a la atención interna. Vite proxifica `/api`, de modo que el navegador usa un mismo origen para cookies y CSRF. No abras la SPA con otro host sin cambiar `APP_ORIGIN`. No publiques el acceso de desarrollo en LAN/VPN ni mediante un túnel o reverse proxy.
 
 ## Portal de solicitudes (fase 4)
 
 - **Mis solicitudes → Nueva solicitud**: selecciona una categoría activa, escribe título y descripción. El backend obtiene el solicitante de la sesión y el departamento de la categoría. Se genera `UNI-000001`, etc., dentro de una transacción con su evento y las notificaciones administrativas pertinentes.
 - La lista permite buscar por número/título/descripción y filtrar estado. Listados, comentarios e historial tienen paginación real: 20 por defecto, máximo 100.
-- El detalle muestra estado, prioridad actual, departamento, categoría, fechas, descripción, conversación pública e historial seguro. Solo puedes consultar tus tickets: también ADMIN/TECHNICIAN/SUPER_ADMIN usan este portal con alcance propio. La bandeja del personal usa rutas distintas, con alcance de departamento para técnicos y global para SUPER_ADMIN.
+- El detalle muestra estado, prioridad actual, departamento, categoría, fechas, descripción, conversación pública e historial seguro. Solo puedes consultar tus tickets: también ADMIN/TECHNICIAN/SUPER_ADMIN usan este portal con alcance propio. La bandeja interna usa rutas distintas: alcance de departamento para técnicos y global para ADMIN/SUPER_ADMIN.
 - Los comentarios son públicos; no se aceptan notas internas desde el portal. Si el estado es `WAITING_USER`, tu respuesta lo cambia automáticamente a `IN_PROGRESS`.
 - Un ticket `RESOLVED` permite confirmar el cierre o reabrirlo durante los siete días posteriores a `resolvedAt`. Cerrado (`CLOSED`) es de solo lectura y no se reabre desde este portal. El plazo se valida nuevamente en el servidor, no solo mediante botones.
 
@@ -127,7 +127,7 @@ Las notas internas, metadatos de personal y relaciones de tareas nunca se incluy
 
 El detalle de **Mis solicitudes**, **Todos los tickets** y **Mis tickets** incluye un **chat en vivo** entre el solicitante y el personal autorizado, con historial guardado en SQLite. Se reutiliza el WebSocket de la sesión y la API protegida. Las notas internas permanecen privadas y los tickets cerrados son de solo lectura. [Uso y límites del chat](docs/ticket-chat.md).
 
-En el sidebar de SUPER_ADMIN y TECHNICIAN, **Bandeja de tickets** despliega **Todos los tickets** y **Mis tickets**. Esta última muestra los asignados a la cuenta de la sesión, con filtros y paginación del servidor dentro de su alcance autorizado. Rutas directas: `/admin/tickets/mine` y `/staff/tickets/mine`.
+En el sidebar de ADMIN, SUPER_ADMIN y TECHNICIAN, **Bandeja de tickets** despliega **Todos los tickets** y **Mis tickets**. Esta última muestra los asignados a la cuenta de la sesión, con filtros y paginación del servidor dentro de su alcance autorizado. ADMIN/SUPER_ADMIN ven todos los departamentos; técnicos, solo los suyos. Rutas directas: `/admin/tickets/mine` y `/staff/tickets/mine`.
 
 **Mis solicitudes** sigue siendo el portal de tickets creados por ti, no tus asignaciones. El desplegable admite teclado, sidebar plegado y menú móvil. Ver [verificación](docs/verification/assigned-tickets.md).
 
@@ -135,9 +135,9 @@ Ambas bandejas incluyen búsqueda con pausa al escribir, filtros de estado/prior
 
 ## Kanban privado (fase 6)
 
-1. Entra como `SUPER_ADMIN` y abre **Tableros → Nuevo tablero**. Selecciona un departamento activo. Se crean Pendiente, En progreso, En revisión y Completado; no hay tableros ni tareas precargados.
-2. En **Administrar tablero**, añade técnicos activos que pertenezcan al departamento. `VIEW` consulta, `EDIT` crea/edita/mueve tareas y comenta, `MANAGE` además configura columnas y miembros. SUPER_ADMIN tiene acceso global. Un técnico del departamento sin pertenencia al tablero recibe 404.
-3. Crea tareas con título, descripción, prioridad, columna, responsables y fecha límite opcional. Solo se asignan miembros explícitos activos y elegibles; para asignar un ADMIN también hay que incorporarlo explícitamente.
+1. Entra como `ADMIN` o `SUPER_ADMIN` y abre **Tableros → Nuevo tablero**. Selecciona un departamento activo. Se crean Pendiente, En progreso, En revisión y Completado; no hay tableros ni tareas precargados.
+2. En **Administrar tablero**, ADMIN/SUPER_ADMIN pueden incorporar técnicos activos del departamento, cuentas ADMIN y otros superadministradores activos. Un técnico con `MANAGE` solo busca técnicos de su departamento y SUPER_ADMIN. ADMIN/SUPER_ADMIN tienen acceso global `MANAGE`; los técnicos requieren pertenencia al departamento y al tablero. `VIEW` consulta, `EDIT` crea/edita/mueve tareas y comenta, `MANAGE` además configura columnas y miembros. Un técnico del departamento sin pertenencia al tablero recibe 404.
+3. Crea tareas con título, descripción, prioridad, columna, responsables y fecha límite opcional. Solo se asignan personas activas elegibles que se hayan incorporado explícitamente al tablero; las cuentas USER no pueden añadirse a espacios internos.
 4. Arrastra desde el asa de puntos a una columna o sobre otra tarjeta para ordenarla. La actualización es optimista; el servidor valida y devuelve el orden canónico. Un error restaura la posición. También puedes usar **Mover tarea sin arrastrar** dentro del detalle.
 5. Abre una tarea para editar, asignar responsables, comentar, gestionar checklist y consultar su historial privado. Las fechas se guardan como milisegundos UTC y se presentan en hora local. La columna es su estado; no existe un segundo `status`.
 6. Configura/reordena columnas desde la administración del tablero. No se pueden eliminar columnas con tareas, incluidas las archivadas. Archivar tarea o tablero conserva datos e historial y los deja de solo lectura.
@@ -150,7 +150,7 @@ Rutas: `/admin/boards`, `/admin/boards/:id`, `/staff/boards`, `/staff/boards/:id
 - En **Atención de tickets → detalle**, usa **Crear tarea a partir de este ticket**. Selecciona un tablero autorizado del mismo departamento; título y descripción del ticket aparecen como valores iniciales editables. La tarea y el vínculo se guardan en una sola transacción, sin cambiar el estado del ticket.
 - Desde el mismo detalle puedes **Vincular tarea existente**. Las tareas relacionadas abren directamente su panel en el tablero, mediante `?taskId=...`.
 - El panel de tarea muestra **Tickets asociados · Privado**; permite consultar, incorporar y desvincular tickets existentes. Es una relación muchos-a-muchos, con historial en la tarea y auditoría. Desvincular no elimina ninguna entidad.
-- Lectura exige acceso a ambos recursos; los listados y sus totales no revelan tareas de tableros ajenos. Para escribir necesitas EDIT/MANAGE del tablero y ser el técnico responsable del ticket o ADMIN. VIEW solo consulta. CLOSED no admite cambios de vínculos.
+- Lectura exige acceso a ambos recursos; los listados y sus totales no revelan tareas de tableros ajenos. Para escribir necesitas EDIT/MANAGE del tablero y ser responsable asignado del ticket (incluido ADMIN asignado) o SUPER_ADMIN. VIEW solo consulta. CLOSED no admite cambios de vínculos.
 - No se permiten vínculos entre departamentos distintos. Para trasladar un ticket a otro departamento, retira primero sus vínculos; de lo contrario devuelve 409. Se permite retirar vínculos de tareas/tableros archivados como revocación privada, conservando historial; no crear vínculos nuevos en ellos.
 - El portal `/app/tickets` y sus endpoints públicos nunca muestran tareas, vínculos, IDs internos de tareas ni sus eventos. No hay automatización que cierre un ticket al completar una tarea.
 
@@ -159,21 +159,21 @@ API interna: GET/POST `/staff/tickets/:id/tasks`, GET/POST `/tasks/:id/tickets`,
 ## Atención interna (fase 5)
 
 1. Abre **Atención de tickets**. Busca por número/título/descripción y filtra departamento, categoría, prioridad, estado y responsable, o selecciona **Sin asignar**. La paginación se aplica en SQLite.
-2. SUPER_ADMIN abre la bandeja interna y elige un técnico activo del departamento en **Responsable**. La primera asignación lleva OPEN a ASSIGNED. Elegir **Sin asignar** retira el responsable; ASSIGNED vuelve a OPEN. Otros estados conservan su significado.
+2. ADMIN o SUPER_ADMIN abre la bandeja global y elige un técnico activo del departamento o una cuenta ADMIN activa en **Responsable**. La primera asignación lleva OPEN a ASSIGNED. Elegir **Sin asignar** retira el responsable; ASSIGNED vuelve a OPEN. Otros estados conservan su significado.
 3. El técnico responsable abre el detalle, cambia a **En progreso**, establece prioridad y envía una **Respuesta pública** o una **Nota interna**. Otros técnicos del mismo departamento pueden consultar, pero no modificar tickets ajenos a su asignación. Un departamento ajeno recibe 404.
 4. **Esperando usuario** solicita información; una respuesta del solicitante retoma **En progreso**. El responsable puede resolver; el solicitante confirma cierre o reabre dentro de siete días. CLOSED es de solo lectura, también para ADMIN.
 5. SUPER_ADMIN puede resolver directamente un ticket pendiente. El historial registra la transición. El personal autorizado puede reabrir un RESOLVED desde su panel; el límite de siete días corresponde al portal del solicitante.
-6. SUPER_ADMIN puede reasignar departamento y categoría activos, seleccionando un técnico compatible o dejando **Sin asignar**. Se valida todo en una transacción, y el personal del departamento anterior pierde acceso inmediatamente. En la API, omitir `assignedToId` en el traslado elimina la asignación anterior.
-7. **Resumen** muestra conteos reales por estado, departamento y prioridad. **Sin asignar pendientes** y **Mis asignadas pendientes** excluyen RESOLVED/CLOSED. Los técnicos ven sus departamentos; SUPER_ADMIN ve el conjunto global. **Mis tareas pendientes** cuenta tareas asignadas a ti, no archivadas, en tableros accesibles y columnas no completadas.
+6. SUPER_ADMIN puede reasignar departamento y categoría activos, seleccionando un técnico o administrador compatible o dejando **Sin asignar**. Se valida todo en una transacción, y el personal del departamento anterior pierde acceso inmediatamente. En la API, omitir `assignedToId` en el traslado elimina la asignación anterior.
+7. **Resumen** muestra conteos reales por estado, departamento y prioridad. **Sin asignar pendientes** y **Mis asignadas pendientes** excluyen RESOLVED/CLOSED. Los técnicos ven sus departamentos; ADMIN/SUPER_ADMIN ven el conjunto global. **Mis tareas pendientes** cuenta tareas asignadas a ti, no archivadas, en tableros accesibles y columnas no completadas.
 
 Se guardan eventos y auditoría de asignaciones, traslados, prioridades, estados y mensajes. Auditoría/eventos no copian el texto de las notas. Las asignaciones, respuestas públicas y cambios de estado guardan notificaciones en la misma transacción; las notas internas no notifican al solicitante. La campana y la página de notificaciones consultan exclusivamente los avisos del destinatario con sus permisos actuales.
 
 ## Administración (fase 3)
 
 1. En **Departamentos**, crea un nombre y un slug único. La administración ordinaria puede editarlo y desactivarlo; solo `SUPER_ADMIN` abre **Técnicos** para gestionar pertenencias.
-2. **Usuarios** y **Auditoría** son exclusivos de `SUPER_ADMIN`. Los usuarios institucionales aparecen tras su primer login; `Domain Admins` deriva `ADMIN` y las cuentas `Domain Users`/restantes `USER` (se conserva un `TECHNICIAN` ya establecido). El rol LDAP no se cambia desde la web; `SUPER_ADMIN` se concede solo mediante la CLI.
+2. **Usuarios** es exclusivo de `SUPER_ADMIN`; **Auditoría** está disponible para ADMIN/SUPER_ADMIN. Los usuarios institucionales aparecen tras su primer login; `Domain Admins` deriva `ADMIN` y las cuentas `Domain Users`/restantes `USER` (se conserva un `TECHNICIAN` ya establecido). El rol LDAP no se cambia desde la web; `SUPER_ADMIN` se concede solo mediante la CLI.
 3. La gestión de pertenencias de técnicos a departamentos está limitada a `SUPER_ADMIN`. En **Categorías**, selecciona un departamento activo y registra la categoría. Nombre, slug, descripción y activación son editables. El departamento se mantiene fijo para no alterar el significado histórico; crea otra categoría si cambia su destino.
-4. `SUPER_ADMIN` puede consultar **Auditoría**: cambios, actor, fecha y valores anteriores/nuevos. Es de solo lectura.
+4. ADMIN/SUPER_ADMIN pueden consultar **Auditoría**: cambios, actor, fecha y valores anteriores/nuevos. Es de solo lectura.
 
 Los listados tienen búsqueda, filtros y paginación real (20 por defecto, máximo 100). La desactivación conserva datos y relaciones; el catálogo de solicitudes oculta categorías inactivas o cuyo departamento esté inactivo.
 
@@ -186,7 +186,7 @@ Las cuentas `tecnico-local` y `usuario-local`, los departamentos y las categorí
 - Proveedor local de desarrollo con contraseñas Argon2id; proveedor LDAP directo por **LDAPS verificado**, sin fallback inseguro.
 - Identidad AD estable por `objectGUID`; el login actualiza atributos descriptivos y conserva roles, activación local y pertenencias.
 - Sesiones persistentes con token aleatorio de 32 bytes; SQLite guarda únicamente hashes SHA-256 de sesión y CSRF. Cookie HttpOnly, SameSite=Lax, Path=/, sin Domain; Secure y prefijo `__Host-` en producción.
-- Inactividad máxima 8 horas y límite absoluto 24 horas. Logout revoca; login rota la sesión previa del navegador; promoción invalida sesiones del usuario.
+- Inactividad máxima 168 horas (7 días) y límite absoluto 168 horas. Las lecturas y el polling no renuevan el tiempo de inactividad; acciones explícitas de negocio sí. Logout revoca; login rota la sesión previa del navegador; promoción invalida sesiones del usuario.
 - Todas las operaciones de escritura exigen origen exacto y CSRF. Login también tiene protección CSRF y limitación de peticiones.
 - Roles y sesiones comprobados por NestJS en cada solicitud. React también protege sus rutas y retira datos privados al salir.
 - Revalidación periódica de cuentas AD (5 minutos por defecto), fallando de forma segura si no es posible consultar el directorio cuando corresponde.

@@ -13,13 +13,14 @@ export class TicketAccessPolicy {
     if (!row) throw new NotFoundException('Ticket no encontrado');
     return row;
   }
-  assertStaff(user: User) { if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.TECHNICIAN) throw new ForbiddenException('La bandeja interna es exclusiva del equipo técnico y superadministradores'); }
-  assertAdmin(user: User) { if (user.role !== UserRole.SUPER_ADMIN) throw new ForbiddenException('Solo superadministradores pueden asignar o trasladar tickets'); }
+  assertStaff(user: User) { if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.ADMIN && user.role !== UserRole.TECHNICIAN) throw new ForbiddenException('La bandeja interna es exclusiva del equipo de atención y administradores'); }
+  assertAdmin(user: User) { if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.ADMIN) throw new ForbiddenException('Solo administradores pueden asignar tickets'); }
+  assertSuperAdmin(user: User) { if (user.role !== UserRole.SUPER_ADMIN) throw new ForbiddenException('Solo superadministradores pueden cambiar el departamento de un ticket'); }
   requireStaff(user: User, id: string) {
     this.assertStaff(user); const row = this.staff.get(user, id);
     if (!row) throw new NotFoundException('Ticket no encontrado'); return row;
   }
-  canEdit(user: User, ticket: Ticket) { return ticket.status !== 'CLOSED' && (user.role === UserRole.SUPER_ADMIN || (user.role === UserRole.TECHNICIAN && ticket.assignedToId === user.id)); }
-  assertEdit(user: User, ticket: Ticket) { this.assertWritable(ticket); if (!this.canEdit(user, ticket)) throw new ForbiddenException('Solo el técnico responsable o un superadministrador puede modificar este ticket'); }
+  canEdit(user: User, ticket: Ticket) { return ticket.status !== 'CLOSED' && (user.role === UserRole.SUPER_ADMIN || ((user.role === UserRole.ADMIN || user.role === UserRole.TECHNICIAN) && ticket.assignedToId === user.id)); }
+  assertEdit(user: User, ticket: Ticket) { this.assertWritable(ticket); if (!this.canEdit(user, ticket)) throw new ForbiddenException('Solo el responsable asignado o un superadministrador puede modificar este ticket'); }
   assertWritable(ticket: Ticket) { if (ticket.status === 'CLOSED') throw new ConflictException('Los tickets cerrados son de solo lectura'); }
 }

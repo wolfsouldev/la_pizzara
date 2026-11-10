@@ -53,9 +53,7 @@ function ShellContent({ area, title }: { area: Area; title: string }) {
   const { setOpenMobile } = useSidebar();
   useEffect(() => { setOpenMobile(false); }, [location.pathname, setOpenMobile]);
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
-  const workspace: NavigationLink[] = area === 'app' ? [{ to: '/app/tickets', label: 'Mis solicitudes', icon: Ticket }] : area === 'admin' && !isSuperAdmin ? [
-    { to: '/admin/services', label: 'Estado de servicios', icon: Activity },
-  ] : [
+  const workspace: NavigationLink[] = area === 'app' ? [{ to: '/app/tickets', label: 'Mis solicitudes', icon: Ticket }] : [
     { to: `/${area}/dashboard`, label: 'Resumen', icon: LayoutDashboard },
     { to: `/${area}/tickets`, label: 'Bandeja de tickets', icon: Ticket, children: [
       { to: `/${area}/tickets`, label: 'Todos los tickets', icon: Ticket },
@@ -63,18 +61,19 @@ function ShellContent({ area, title }: { area: Area; title: string }) {
     ] },
     { to: `/${area}/boards`, label: 'Tableros de trabajo', icon: Columns3 },
   ];
-  if (!(area === 'admin' && !isSuperAdmin)) workspace.push({ to: `/${area}/services`, label: 'Estado de servicios', icon: Activity });
+  if (area !== 'app') workspace.push({ to: `/${area}/services`, label: 'Estado de servicios', icon: Activity });
   const administration: NavigationLink[] = area === 'admin' ? [
     { to: '/admin/departments', label: 'Departamentos', icon: Building2 },
     { to: '/admin/categories', label: 'Categorías', icon: Tags },
-    ...(isSuperAdmin ? [{ to: '/admin/users', label: 'Usuarios', icon: Users }, { to: '/admin/audit', label: 'Auditoría', icon: ScrollText }] : []),
+    { to: '/admin/audit', label: 'Auditoría', icon: ScrollText },
+    ...(isSuperAdmin ? [{ to: '/admin/users', label: 'Usuarios', icon: Users }] : []),
   ] : [];
   const personal: NavigationLink[] = [
     ...(area !== 'app' ? [{ to: '/app/tickets', label: 'Mis solicitudes', icon: Ticket }] : []),
     { to: `/${area}/notifications`, label: 'Notificaciones', icon: Bell },
     { to: `/${area}/profile`, label: 'Mi perfil', icon: UserRound },
     ...(area !== 'app' && (area !== 'staff' || user?.role === 'SUPER_ADMIN') ? [{ to: `/${area}/access`, label: 'Permisos de acceso', icon: ShieldCheck }] : []),
-    ...(area === 'app' && (user?.role === 'ADMIN' || isSuperAdmin) ? [{ to: isSuperAdmin ? '/admin/dashboard' : '/admin/services', label: 'Administración', icon: Building2 }] : []),
+    ...(area === 'app' && (user?.role === 'ADMIN' || isSuperAdmin) ? [{ to: '/admin/dashboard', label: 'Administración', icon: Building2 }] : []),
     ...(area === 'app' && user?.role === 'TECHNICIAN' ? [{ to: '/staff/dashboard', label: 'Panel de atención', icon: ShieldCheck }] : []),
   ];
   const currentLink = [...workspace.flatMap(link => link.children ?? [link]), ...administration, ...personal].find(link => location.pathname === link.to);

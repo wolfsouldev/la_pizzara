@@ -14,12 +14,12 @@ function person<T extends { id: AnySQLiteColumn; displayName: AnySQLiteColumn; u
 export class StaffTicketsRepository {
   constructor(private readonly database: DatabaseService, private readonly boardRepo: BoardsRepository) {}
   scope(user: User) {
-    if (user.role === 'SUPER_ADMIN') return undefined;
+    if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN) return undefined;
     if (user.role !== 'TECHNICIAN') return sql`0 = 1`;
     return inArray(tickets.departmentId, this.database.db.select({ id: departmentMembers.departmentId }).from(departmentMembers).where(eq(departmentMembers.userId, user.id)));
   }
   private scopedDepartments(user: User) {
-    return user.role === 'SUPER_ADMIN' ? undefined : user.role === 'TECHNICIAN' ? inArray(departments.id, this.database.db.select({ id: departmentMembers.departmentId }).from(departmentMembers).where(eq(departmentMembers.userId, user.id))) : sql`0 = 1`;
+    return user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN ? undefined : user.role === UserRole.TECHNICIAN ? inArray(departments.id, this.database.db.select({ id: departmentMembers.departmentId }).from(departmentMembers).where(eq(departmentMembers.userId, user.id))) : sql`0 = 1`;
   }
   get(user: User, id: string) {
     return this.database.db.select({ ticket: getTableColumns(tickets), department: { id: departments.id, name: departments.name }, category: { id: ticketCategories.id, name: ticketCategories.name }, requester: person(requester), assignee: person(assignee) }).from(tickets)
@@ -36,14 +36,22 @@ export class StaffTicketsRepository {
   }
   options(user: User) {
     const where = this.scopedDepartments(user);
+    const scopedDepartments = this.database.db.select({ id: departments.id }).from(departments).where(where).all();
+    const technicians = this.database.db.select({ ...person(users), departmentId: departmentMembers.departmentId, isActive: users.isActive }).from(departmentMembers).innerJoin(departments, eq(departments.id, departmentMembers.departmentId)).innerJoin(users, eq(users.id, departmentMembers.userId)).where(and(where, eq(users.role, UserRole.TECHNICIAN))).all();
+    // Institutional ADMINs may be assigned across departments without being
+    // department technicians; repeat each eligible admin per scoped department
+    // to preserve the existing options DTO and its department filtering.
+    const admins = user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN
+      ? this.database.db.select({ ...person(users), isActive: users.isActive }).from(users).where(eq(users.role, UserRole.ADMIN)).all()
+      : [];
     return {
       departments: this.database.db.select({ id: departments.id, name: departments.name, isActive: departments.isActive }).from(departments).where(where).orderBy(departments.name).all(),
       categories: this.database.db.select({ id: ticketCategories.id, name: ticketCategories.name, departmentId: ticketCategories.departmentId, isActive: ticketCategories.isActive }).from(ticketCategories).innerJoin(departments, eq(ticketCategories.departmentId, departments.id)).where(where).orderBy(ticketCategories.name).all(),
-      assignees: this.database.db.select({ ...person(users), departmentId: departmentMembers.departmentId, isActive: users.isActive }).from(departmentMembers).innerJoin(departments, eq(departments.id, departmentMembers.departmentId)).innerJoin(users, eq(users.id, departmentMembers.userId)).where(and(where, eq(users.role, UserRole.TECHNICIAN))).orderBy(users.displayName).all(),
+      assignees: [...technicians, ...admins.flatMap(admin => scopedDepartments.map(department => ({ ...admin, departmentId: department.id })))].sort((a, b) => a.displayName.localeCompare(b.displayName, 'es')),
     };
   }
   eligibleAssignee(userId: string, departmentId: string) {
-    return this.database.db.select({ id: users.id }).from(users).innerJoin(departmentMembers, eq(users.id, departmentMembers.userId)).where(and(eq(users.id, userId), eq(users.role, UserRole.TECHNICIAN), eq(users.isActive, true), eq(departmentMembers.departmentId, departmentId))).get();
+    return this.database.db.select({ id: users.id }).from(users).where(and(eq(users.id, userId), eq(users.isActive, true), or(eq(users.role, UserRole.ADMIN), and(eq(users.role, UserRole.TECHNICIAN), inArray(users.id, this.database.db.select({ id: departmentMembers.userId }).from(departmentMembers).where(eq(departmentMembers.departmentId, departmentId))))))).get();
   }
   category(id: string, departmentId: string) { return this.database.db.select({ id: ticketCategories.id }).from(ticketCategories).innerJoin(departments, eq(departments.id, ticketCategories.departmentId)).where(and(eq(ticketCategories.id, id), eq(ticketCategories.departmentId, departmentId), eq(ticketCategories.isActive, true), eq(departments.isActive, true))).get(); }
   update(user: User, id: string, patch: Partial<Pick<Ticket, 'status' | 'priority' | 'assignedToId' | 'departmentId' | 'categoryId' | 'assignedAt' | 'resolvedAt' | 'closedAt'>>, now: number) {
