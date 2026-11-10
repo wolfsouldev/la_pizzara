@@ -4,7 +4,7 @@
 
 ### Roles institucionales
 
-En LDAP, pertenecer directamente a Domain Users (o tenerlo como grupo primario RID 513) asigna ADMIN; quien no pertenece recibe USER. SUPER_ADMIN se concede solo desde la CLI del servidor. ADMIN gestiona departamentos, categorías y el estado público de servicios; usuarios/roles, auditoría, bandeja interna, tableros privados y notas internas requieren SUPER_ADMIN. Si Domain Users incluye a toda la comunidad, esa regla convierte a todos ellos en administradores ordinarios de la aplicación: no equivale a SUPER_ADMIN, pero debe ser una decisión institucional consciente.
+En LDAP, pertenecer a `Domain Admins` (membresía directa o grupo primario RID 512) asigna `ADMIN`; las cuentas `Domain Users` y las demás reciben `USER`, salvo un rol `TECHNICIAN` ya establecido. `Domain Users` no concede privilegios administrativos. `SUPER_ADMIN` se concede solo desde la CLI del servidor. ADMIN gestiona departamentos, categorías y el estado público de servicios; usuarios/roles, auditoría, bandeja interna, tableros privados y notas internas requieren SUPER_ADMIN.
 
 ## Marca visual
 
@@ -169,13 +169,13 @@ Se guardan eventos y auditoría de asignaciones, traslados, prioridades, estados
 ## Administración (fase 3)
 
 1. En **Departamentos**, crea un nombre y un slug único. La administración ordinaria puede editarlo y desactivarlo; solo `SUPER_ADMIN` abre **Técnicos** para gestionar pertenencias.
-2. **Usuarios** y **Auditoría** son exclusivos de `SUPER_ADMIN`. Los usuarios institucionales aparecen tras su primer login; `Domain Users` deriva `ADMIN` y las demás cuentas `USER`. El rol LDAP no se cambia desde la web; `SUPER_ADMIN` se concede solo mediante la CLI.
+2. **Usuarios** y **Auditoría** son exclusivos de `SUPER_ADMIN`. Los usuarios institucionales aparecen tras su primer login; `Domain Admins` deriva `ADMIN` y las cuentas `Domain Users`/restantes `USER` (se conserva un `TECHNICIAN` ya establecido). El rol LDAP no se cambia desde la web; `SUPER_ADMIN` se concede solo mediante la CLI.
 3. La gestión de pertenencias de técnicos a departamentos está limitada a `SUPER_ADMIN`. En **Categorías**, selecciona un departamento activo y registra la categoría. Nombre, slug, descripción y activación son editables. El departamento se mantiene fijo para no alterar el significado histórico; crea otra categoría si cambia su destino.
 4. `SUPER_ADMIN` puede consultar **Auditoría**: cambios, actor, fecha y valores anteriores/nuevos. Es de solo lectura.
 
 Los listados tienen búsqueda, filtros y paginación real (20 por defecto, máximo 100). La desactivación conserva datos y relaciones; el catálogo de solicitudes oculta categorías inactivas o cuyo departamento esté inactivo.
 
-No se puede desactivar ni degradar al último `ADMIN` activo. Los cambios permitidos de rol/activación invalidan sesiones y se auditan en la misma transacción. La derivación LDAP por `Domain Users` no es editable por HTTP; la sincronización de grupo también puede revocar sesiones y exigir un nuevo inicio. Solo técnicos activos pueden incorporarse a departamentos activos; desactivar un usuario no borra sus pertenencias. No se retira a un técnico de un departamento mientras tenga tickets no cerrados asignados en él: deben reasignarse primero desde el panel de atención.
+No se puede desactivar ni degradar al último `ADMIN` activo. Los cambios permitidos de rol/activación invalidan sesiones y se auditan en la misma transacción. La derivación LDAP por `Domain Admins` no es editable por HTTP; la sincronización de grupo también puede revocar sesiones y exigir un nuevo inicio. Solo técnicos activos pueden incorporarse a departamentos activos; desactivar un usuario no borra sus pertenencias. No se retira a un técnico de un departamento mientras tenga tickets no cerrados asignados en él: deben reasignarse primero desde el panel de atención.
 
 Las cuentas `tecnico-local` y `usuario-local`, los departamentos y las categorías presentes en esta máquina se crearon explícitamente durante la comprobación funcional **local**, no representan datos institucionales ni forman parte de semillas o respuestas hardcodeadas. En una instalación limpia las tablas están vacías. Para trabajar con otros usuarios locales, usa la CLI documentada, eligiendo su contraseña de forma oculta si necesitas login por credenciales.
 

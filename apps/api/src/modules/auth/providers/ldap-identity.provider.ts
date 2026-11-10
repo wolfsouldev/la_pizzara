@@ -18,11 +18,11 @@ function strings(entry: Entry, key: string): string[] {
   if (typeof value === 'string') return [value];
   return Array.isArray(value) ? (value as unknown[]).filter((item): item is string => typeof item === 'string') : [];
 }
-function isDomainUser(entry: Entry) {
-  // AD's well-known primary-group RID is 513. Also check direct membership
+function isDomainAdmin(entry: Entry) {
+  // AD's well-known Domain Admins primary-group RID is 512. Also check direct membership
   // because admins can change an account's primary group.
-  const groupDn = (env.AD_DOMAIN_USERS_GROUP_DN || `CN=Domain Users,CN=Users,${env.AD_BASE_DN}`).toLowerCase();
-  return text(entry, 'primaryGroupID') === '513' || strings(entry, 'memberOf').some(dn => dn.toLowerCase() === groupDn);
+  const groupDn = (env.AD_DOMAIN_ADMINS_GROUP_DN || `CN=Domain Admins,CN=Users,${env.AD_BASE_DN}`).toLowerCase();
+  return text(entry, 'primaryGroupID') === '512' || strings(entry, 'memberOf').some(dn => dn.toLowerCase() === groupDn);
 }
 function guidBytes(entry: Entry) {
   const b = attribute(entry, 'objectGUID');
@@ -81,7 +81,7 @@ export class LdapIdentityProvider implements IdentityProvider {
       if (!canonicalUsername) throw new UnauthorizedException('Credenciales no válidas');
       return { provider: 'ldap', externalId: stableGuid(guidBytes(entry)), username: canonicalUsername,
         displayName: text(entry, 'displayName') ?? ([text(entry, 'givenName'), text(entry, 'sn')].filter(Boolean).join(' ') || canonicalUsername),
-        email: text(entry, 'mail'), department: text(entry, 'department'), isDomainUser: isDomainUser(entry) };
+        email: text(entry, 'mail'), department: text(entry, 'department'), isDomainAdmin: isDomainAdmin(entry) };
     } catch (error) {
       if (error instanceof UnauthorizedException || error instanceof ServiceUnavailableException) throw error;
       throw new ServiceUnavailableException('El directorio no está disponible');
@@ -97,13 +97,13 @@ export class LdapIdentityProvider implements IdentityProvider {
     } catch { throw new Error('No se pudo verificar LDAPS, cuenta de lectura y DN base; revisa DNS, TLS y permisos sin desactivar su validación'); }
     finally { await client.unbind().catch(() => undefined); }
   }
-  async inspectAccount(externalId: string): Promise<{ enabled: boolean; isDomainUser: boolean }> {
+  async inspectAccount(externalId: string): Promise<{ enabled: boolean; isDomainAdmin: boolean }> {
     const client = this.client();
     try {
       const entry = await this.search(client, `(objectGUID=${guidFilter(externalId)})`);
-      return { enabled: this.enabled(entry) && stableGuid(guidBytes(entry)) === externalId, isDomainUser: isDomainUser(entry) };
+      return { enabled: this.enabled(entry) && stableGuid(guidBytes(entry)) === externalId, isDomainAdmin: isDomainAdmin(entry) };
     }
-    catch (error) { if (error instanceof UnauthorizedException) return { enabled: false, isDomainUser: false }; throw new ServiceUnavailableException('No se pudo verificar el estado de la cuenta institucional'); }
+    catch (error) { if (error instanceof UnauthorizedException) return { enabled: false, isDomainAdmin: false }; throw new ServiceUnavailableException('No se pudo verificar el estado de la cuenta institucional'); }
     finally { await client.unbind().catch(() => undefined); }
   }
 }

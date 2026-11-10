@@ -16,7 +16,7 @@ export class UsersService {
       const before = this.users.get(id); if (!before) throw new NotFoundException('Usuario no encontrado');
       const role = patch.role ?? before.role; const active = patch.isActive ?? before.isActive;
       if (role === 'SUPER_ADMIN' || before.role === 'SUPER_ADMIN') throw new ConflictException('El rol de superadministrador solo se concede mediante la CLI y no se modifica desde la web');
-      if (patch.role !== undefined && before.authProvider === 'ldap') throw new ConflictException('El rol institucional se deriva del grupo Domain Users de Active Directory');
+      if (patch.role !== undefined && before.authProvider === 'ldap') throw new ConflictException('El rol ADMIN institucional se deriva del grupo Domain Admins de Active Directory');
       if (before.role === 'ADMIN' && before.isActive && (role !== 'ADMIN' || !active) && this.users.activeAdmins() <= 1) throw new ConflictException('No se puede quitar el privilegio ni desactivar al último administrador activo');
       if (role === 'USER' && this.users.membershipCount(id) > 0) throw new ConflictException('Retira primero las pertenencias del técnico a departamentos');
       if (before.role === role && before.isActive === active) return before;

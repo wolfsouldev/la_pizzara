@@ -31,7 +31,10 @@ export class IdentityRepository {
       const existing = tx.select().from(users).where(and(eq(users.authProvider, identity.provider),
         identity.provider === 'local' ? eq(users.id, identity.externalId) : eq(users.externalId, identity.externalId))).get();
       if (existing && !existing.isActive) return;
-      const role = existing?.role === UserRole.SUPER_ADMIN ? UserRole.SUPER_ADMIN : identity.provider === 'ldap' && identity.isDomainUser ? UserRole.ADMIN : UserRole.USER;
+      const role = existing?.role === UserRole.SUPER_ADMIN ? UserRole.SUPER_ADMIN
+        : identity.provider === 'ldap' && identity.isDomainAdmin ? UserRole.ADMIN
+        : existing?.role === UserRole.TECHNICIAN ? UserRole.TECHNICIAN
+        : UserRole.USER;
       const profile = { username: identity.username, usernameNormalized: identity.username.toLowerCase(), displayName: identity.displayName,
         email: identity.email, adDepartment: identity.department, lastLoginAt: now, directoryCheckedAt: identity.provider === 'ldap' ? now : null, updatedAt: now };
       if (existing) return tx.update(users).set({ ...profile, ...(identity.provider === 'ldap' ? { role } : {}) }).where(eq(users.id, existing.id)).returning().get();
@@ -42,17 +45,17 @@ export class IdentityRepository {
     });
   }
 
-  syncDirectoryRole(userId: string, isDomainUser: boolean) {
+  syncDirectoryRole(userId: string, isDomainAdmin: boolean) {
     return this.database.db.transaction(tx => {
       const user = tx.select().from(users).where(eq(users.id, userId)).get();
       if (!user || !user.isActive || user.authProvider !== 'ldap' || user.role === UserRole.SUPER_ADMIN) return false;
-      const role = isDomainUser ? UserRole.ADMIN : UserRole.USER;
+      const role = isDomainAdmin ? UserRole.ADMIN : user.role === UserRole.TECHNICIAN ? UserRole.TECHNICIAN : UserRole.USER;
       if (user.role === role) return false;
       const now = Date.now();
       tx.update(users).set({ role, directoryCheckedAt: now, updatedAt: now }).where(eq(users.id, userId)).run();
       tx.update(authSessions).set({ revokedAt: now }).where(and(eq(authSessions.userId, userId), isNull(authSessions.revokedAt))).run();
       tx.insert(auditLogs).values({ id: randomUUID(), action: 'DIRECTORY_ROLE_SYNCED', entityType: 'user', entityId: userId,
-        metadata: { previousRole: user.role, role, source: 'Domain Users' }, createdAt: now }).run();
+        metadata: { previousRole: user.role, role, source: 'Domain Admins' }, createdAt: now }).run();
       return true;
     });
   }

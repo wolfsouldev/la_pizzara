@@ -3,7 +3,7 @@
   "info": {
     "title": "Plataforma Universitaria · Fase 8",
     "version": "1.14.0",
-    "description": "Sesiones reales SQLite, credenciales locales o LDAPS, origen estricto y CSRF. Acceso sin credenciales solo en desarrollo habilitado explícitamente y con cuenta local registrada por CLI. Sin registro público ni bootstrap administrativo HTTP. Los límites de peticiones se omiten solo en desarrollo con proveedor local y API enlazada a loopback; siguen activos en producción. Active Directory: Domain Users otorga ADMIN y las demás cuentas reciben USER; SUPER_ADMIN solo se concede mediante CLI. ADMIN gestiona la configuración ordinaria, mientras usuarios/auditoría, bandeja interna, tableros privados y notas internas de servicios requieren SUPER_ADMIN (los técnicos conservan su alcance explícito)."
+    "description": "Sesiones reales SQLite, credenciales locales o LDAPS, origen estricto y CSRF. Acceso sin credenciales solo en desarrollo habilitado explícitamente y con cuenta local registrada por CLI. Sin registro público ni bootstrap administrativo HTTP. Los límites de peticiones se omiten solo en desarrollo con proveedor local y API enlazada a loopback; siguen activos en producción. Active Directory: Domain Admins (membresía directa o grupo primario RID 512) otorga ADMIN; Domain Users y las demás cuentas reciben USER, salvo un rol TECHNICIAN ya establecido; Domain Users no otorga privilegios administrativos; SUPER_ADMIN solo se concede mediante CLI. ADMIN gestiona la configuración ordinaria, mientras usuarios/auditoría, bandeja interna, tableros privados y notas internas de servicios requieren SUPER_ADMIN (los técnicos conservan su alcance explícito)."
   },
   "servers": [
     {
@@ -1909,7 +1909,7 @@
             }
           }
         ],
-        "description": "Solo SUPER_ADMIN. Los roles institucionales se derivan de Domain Users; el cambio manual de rol desde esta ruta no aplica a cuentas LDAP. SUPER_ADMIN solo se concede mediante la CLI autorizada."
+        "description": "Solo SUPER_ADMIN. En LDAP, Domain Admins (membresía directa o grupo primario RID 512) deriva ADMIN; Domain Users y las demás cuentas reciben USER, salvo un rol TECHNICIAN ya establecido. Domain Users no otorga privilegios administrativos."
       }
     },
     "/admin/users/{id}": {
@@ -2169,7 +2169,7 @@
             }
           }
         },
-        "description": "Solo SUPER_ADMIN. En cuentas LDAP el rol se deriva de Domain Users y no se cambia por HTTP. SUPER_ADMIN se concede exclusivamente mediante la CLI; no se admite desde este endpoint."
+        "description": "Solo SUPER_ADMIN. En cuentas LDAP, ADMIN se deriva de Domain Admins; Domain Users y demás cuentas reciben USER salvo un rol TECHNICIAN ya establecido, y el rol no se cambia desde HTTP. SUPER_ADMIN se concede exclusivamente mediante la CLI."
       }
     },
     "/admin/users/{id}/status": {

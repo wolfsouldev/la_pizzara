@@ -11,7 +11,7 @@ export class LocalDevelopmentIdentityProvider implements IdentityProvider {
   private dummyHash?: Promise<string>;
   constructor(private readonly identities: IdentityRepository) {}
   private identity(user: User): AuthenticatedIdentity {
-    return { provider: 'local', externalId: user.id, username: user.username, displayName: user.displayName, email: user.email, department: null, isDomainUser: false };
+    return { provider: 'local', externalId: user.id, username: user.username, displayName: user.displayName, email: user.email, department: null, isDomainAdmin: false };
   }
   async authenticate(username: string, password: string): Promise<AuthenticatedIdentity> {
     if (env.NODE_ENV !== 'development' || env.AUTH_PROVIDER !== 'local') throw new UnauthorizedException('Credenciales no válidas');

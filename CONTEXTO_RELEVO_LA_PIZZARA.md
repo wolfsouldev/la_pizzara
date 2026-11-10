@@ -78,9 +78,9 @@ Después: rediseño oscuro, sidebar responsive, marca/iconos/favicon, vistas Kan
 
 ## 5. Identidad, sesiones y seguridad: no romper
 
-- Roles globales: `USER`, `TECHNICIAN`, `ADMIN`, `SUPER_ADMIN`. En LDAP, pertenecer directamente a `Domain Users` (o tener el grupo primario RID 513) da `ADMIN`; fuera de ese grupo, el rol vuelve a `USER`. `SUPER_ADMIN` se concede solo por CLI, no por grupo AD ni por endpoint web.
+- Roles globales: `USER`, `TECHNICIAN`, `ADMIN`, `SUPER_ADMIN`. En LDAP, pertenecer a `Domain Admins` (membresía directa o grupo primario RID 512) da `ADMIN`; las demás cuentas, incluidas las de `Domain Users`, son `USER`, salvo un `TECHNICIAN` ya establecido. `SUPER_ADMIN` se concede solo por CLI, no por grupo AD ni por endpoint web.
 - Usuarios institucionales aparecen al iniciar sesión correctamente. Identidad estable AD por `objectGUID`, no por correo o nombre de usuario.
-- En cada login LDAP se deriva `ADMIN`/`USER` de `Domain Users` y se reconcilia también durante sesiones activas; `SUPER_ADMIN` permanece como elevación manual. La sincronización de atributos conserva pertenencias y el bloqueo local, pero ya no conserva roles institucionales anteriores.
+- En cada login LDAP se deriva `ADMIN`/`USER` de `Domain Admins` y se reconcilia también durante sesiones activas; `SUPER_ADMIN` permanece como elevación manual y se conserva `TECHNICIAN` ya establecido salvo que la cuenta pertenezca a `Domain Admins`. La sincronización de atributos conserva pertenencias y el bloqueo local.
 - LDAPS verifica certificado, cadena y FQDN. Cuenta de lectura busca coincidencia única; otra conexión cifrada valida el bind del usuario. Se cierran conexiones al terminar.
 - Hay comprobación periódica del estado de la cuenta AD. Si caduca la comprobación y no se puede validar el directorio, se falla de forma segura.
 - Las contraseñas AD no se persisten. No introducir `rejectUnauthorized: false`, `NODE_TLS_REJECT_UNAUTHORIZED=0` ni LDAP simple.

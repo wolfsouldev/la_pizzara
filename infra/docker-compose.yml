@@ -25,7 +25,7 @@ services:
       AD_URL: ${AD_URL:?Define real LDAPS URL}
       AD_BASE_DN: ${AD_BASE_DN:?Define real base DN}
       AD_BIND_DN: ${AD_BIND_DN:?Define service account DN}
-      AD_DOMAIN_USERS_GROUP_DN: ${AD_DOMAIN_USERS_GROUP_DN:-}
+      AD_DOMAIN_ADMINS_GROUP_DN: ${AD_DOMAIN_ADMINS_GROUP_DN:-}
       AD_BIND_PASSWORD_FILE: /run/secrets/ad_bind_password
       AD_CA_CERT_PATH: /app/certs/ad-ca.pem
       AD_LOGIN_ATTRIBUTE: ${AD_LOGIN_ATTRIBUTE:-sAMAccountName}

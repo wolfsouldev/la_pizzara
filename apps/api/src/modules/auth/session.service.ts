@@ -45,14 +45,14 @@ export class SessionService {
     let row = this.identities.session(hashToken(token));
     if (!row || row.user.authProvider !== env.AUTH_PROVIDER) return;
     if (row.user.authProvider === 'ldap' && Date.now() - (row.user.directoryCheckedAt ?? 0) >= env.AD_RECHECK_SECONDS * 1000) {
-      const account = row.user.externalId ? await this.ldap.inspectAccount(row.user.externalId) : { enabled: false, isDomainUser: false };
+      const account = row.user.externalId ? await this.ldap.inspectAccount(row.user.externalId) : { enabled: false, isDomainAdmin: false };
       if (!account.enabled) {
         this.identities.revokeUser(row.user.id);
         throw new UnauthorizedException('Sesión no válida');
       }
       // Group-derived administrator access is periodically reconciled too. A
       // role change revokes the current session and requires a fresh login.
-      if (this.identities.syncDirectoryRole(row.user.id, account.isDomainUser)) throw new UnauthorizedException('El acceso institucional cambió; inicia sesión de nuevo');
+      if (this.identities.syncDirectoryRole(row.user.id, account.isDomainAdmin)) throw new UnauthorizedException('El acceso institucional cambió; inicia sesión de nuevo');
       this.identities.directoryChecked(row.user.id);
       // LDAP awaited I/O: honor local disable, role/session changes or expiry
       // that happened while the directory was being consulted.

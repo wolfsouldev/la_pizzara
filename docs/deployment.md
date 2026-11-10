@@ -37,7 +37,7 @@ Editar `production.env` manualmente. No copiar el `.env` ni SQLite de desarrollo
 | CADDY_IPV4 | Dirección fija libre dentro de APP_SUBNET, fuera de APP_DYNAMIC_RANGE y distinta de gateway; API confía **solo** en ella |
 | AD_URL | LDAPS con FQDN del DC que coincide con certificado y puerto accesible |
 | AD_BASE_DN / AD_BIND_DN | DN base y cuenta institucional de lectura reales |
-| AD_DOMAIN_USERS_GROUP_DN | Opcional: DN exacto del grupo `Domain Users` si no está en el contenedor predeterminado `CN=Users` |
+| AD_DOMAIN_ADMINS_GROUP_DN | Opcional: DN exacto del grupo `Domain Admins` si no está en el contenedor predeterminado `CN=Users` |
 | AD_CA_CERT_FILE | Archivo absoluto de CA pública PEM del AD en host; no leaf ni clave privada |
 | AD_BIND_PASSWORD_FILE | Archivo absoluto privado del host con contraseña de servicio |
 | WEB_TLS_DIRECTORY | Directorio de certificados web (existente incluso en modo `internal`) |
@@ -141,7 +141,7 @@ Si se utiliza una instalación rootless/userns-remap/SELinux, adaptar permisos/b
 
 ## 6. Acceso administrativo y validación institucional
 
-1. Entrar por HTTPS con una cuenta institucional real. La pertenencia directa al grupo AD `Domain Users` (incluida la pertenencia como grupo primario RID 513) sincroniza el rol `ADMIN`; quien no pertenezca queda como `USER`. Por defecto se busca `CN=Domain Users,CN=Users,<AD_BASE_DN>`; si el grupo está en otra ubicación, configurar `AD_DOMAIN_USERS_GROUP_DN` con su DN comprobado. No se consulta el nombre visible del usuario ni se modifica Active Directory. No hay registro público ni bootstrap HTTP.
+1. Entrar por HTTPS con una cuenta institucional real. La pertenencia al grupo AD `Domain Admins` (membresía directa o grupo primario RID 512) sincroniza el rol `ADMIN`. Las cuentas del grupo `Domain Users` y las demás reciben `USER`, salvo un rol `TECHNICIAN` ya establecido; `Domain Users` no otorga acceso administrativo. Por defecto se busca `CN=Domain Admins,CN=Users,<AD_BASE_DN>`; si el grupo está en otra ubicación, configurar `AD_DOMAIN_ADMINS_GROUP_DN` con su DN comprobado. No se consulta el nombre visible del usuario ni se modifica Active Directory. No hay registro público ni bootstrap HTTP.
 2. `SUPER_ADMIN` es una elevación separada y manual, que no procede de grupos AD y no se puede asignar desde la web. Después de que la persona de confianza haya iniciado sesión una vez, en consola autorizada ejecutar:
 
 ```bash

@@ -28,7 +28,7 @@ const schema = z.object({
   DEV_ACCESS_ENABLED: z.enum(['true', 'false']).default('false').transform(value => value === 'true'),
   DEV_ACCESS_USERNAME: z.string().trim().max(254).default(''),
   AD_URL: z.string().default(''), AD_BASE_DN: z.string().default(''), AD_BIND_DN: z.string().default(''), AD_BIND_PASSWORD: z.string().default(''), AD_CA_CERT_PATH: z.string().default(''),
-  AD_DOMAIN_USERS_GROUP_DN: z.string().trim().default(''),
+  AD_DOMAIN_ADMINS_GROUP_DN: z.string().trim().default(''),
   AD_LOGIN_ATTRIBUTE: z.enum(['sAMAccountName', 'userPrincipalName']).default('sAMAccountName'),
   AD_CONNECT_TIMEOUT_MS: z.coerce.number().int().positive().default(5000),
   AD_OPERATION_TIMEOUT_MS: z.coerce.number().int().positive().default(10000),

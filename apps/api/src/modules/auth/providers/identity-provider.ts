@@ -5,7 +5,7 @@ export interface AuthenticatedIdentity {
   displayName: string;
   email: string | null;
   department: string | null;
-  isDomainUser: boolean;
+  isDomainAdmin: boolean;
 }
 export interface IdentityProvider {
   authenticate(username: string, password: string): Promise<AuthenticatedIdentity>;
