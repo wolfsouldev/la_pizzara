@@ -44,6 +44,8 @@ chmod 600 infra/env/production.env
 
 **No copiar SQLite/cuentas de desarrollo a producción.** Producción rechaza proveedor local, entrada sin contraseña, origen HTTP, CA inválida, identidades locales y arranque sin montajes persistentes requeridos. El desarrollo local de las fases anteriores continúa igual.
 
+Para reconstruir API y web desde un checkout que ya tenga el cambio revisado, `npm run deploy:app` ejecuta la comprobación de Compose, build, recreación y estado. Requiere Node/npm en el host; no hace `git pull` ni sustituye la copia y prueba de recuperación. Los pasos y comandos individuales están en [despliegue](docs/deployment.md#8-parada-actualización-y-rollback).
+
 Seguir [instalación, HTTPS, firewall, bootstrap y actualización](docs/deployment.md) y [copias/restauración](docs/backup-restore.md). No se configura AD/DNS/firewall automáticamente. Un ensayo local no sustituye login institucional ni verificación LAN/VPN en el servidor real.
 
 ## Requisitos

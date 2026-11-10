@@ -162,6 +162,21 @@ Estos pasos necesitan AD y red reales: **no se marcan completados por un health 
 
 ## 8. Parada, actualización y rollback
 
+### Atajo npm para reconstruir API y web
+
+En un checkout ya actualizado y revisado, se puede usar npm desde la raíz del repositorio para ejecutar las operaciones habituales de Compose. Requiere Node/npm instalados en el host, Docker Compose y `infra/env/production.env` presente. No hace `git pull`, no cambia `RELEASE_TAG` y no reemplaza el procedimiento de respaldo y recuperación descrito arriba.
+
+| Comando | Qué hace |
+|---|---|
+| `npm run deploy:config` | Comprueba que Compose pueda leer la configuración (`config --quiet`); no inicia servicios ni valida un login AD. |
+| `npm run deploy:build` | Construye imágenes locales nuevas de `api` y `web` con el código que ya está en este checkout. |
+| `npm run deploy:recreate` | Recrea los contenedores `api` y `web` usando las imágenes/configuración actuales. Puede haber una breve interrupción; no recrea Caddy. |
+| `npm run deploy:status` | Muestra el estado de los servicios Compose. |
+| `npm run deploy:logs` | Muestra las últimas 100 líneas de API, web y Caddy. Mantén los logs privados y revisa que no contengan datos sensibles antes de compartirlos. |
+| `npm run deploy:app` | Ejecuta, en orden, `deploy:config`, `deploy:build`, `deploy:recreate` y `deploy:status`; se detiene si falla un paso. |
+
+Antes de `deploy:app`, actualiza el checkout con la versión revisada, haz la copia y prueba de recuperación requeridas, y programa la ventana de mantenimiento. El comando no descarga cambios ni hace por sí solo una validación funcional de login, permisos o WebSocket. Si el archivo de entorno está fuera de la ruta predeterminada, pásalo al wrapper, por ejemplo: `DEPLOY_ENV_FILE=/ruta/privada/production.env npm run deploy:app`.
+
 ```bash
 ./infra/scripts/compose.sh stop
 ./infra/scripts/compose.sh start

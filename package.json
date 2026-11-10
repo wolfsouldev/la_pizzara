@@ -6,6 +6,12 @@
   "scripts": {
     "dev": "node scripts/prepare-dev.mjs && pnpm build && pnpm --parallel --filter @uni/shared --filter api --filter web dev",
     "build": "pnpm --filter @uni/shared build && pnpm --filter api build && pnpm --filter web build",
-    "typecheck": "pnpm --filter @uni/shared build && pnpm -r typecheck"
+    "typecheck": "pnpm --filter @uni/shared build && pnpm -r typecheck",
+    "deploy:config": "./infra/scripts/compose.sh config --quiet",
+    "deploy:build": "./infra/scripts/compose.sh build api web",
+    "deploy:recreate": "./infra/scripts/compose.sh up -d --force-recreate api web",
+    "deploy:status": "./infra/scripts/compose.sh ps",
+    "deploy:logs": "./infra/scripts/compose.sh logs --tail=100 api web caddy",
+    "deploy:app": "npm run deploy:config && npm run deploy:build && npm run deploy:recreate && npm run deploy:status"
   }
 }
