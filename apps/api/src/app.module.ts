@@ -1,3 +1,4 @@
+import { CalendarModule } from './modules/calendar/calendar.module';
 import { ServicesModule } from './modules/services/services.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { TaskLinksModule } from './modules/task-links/task-links.module';
@@ -16,7 +17,7 @@ import { SessionGuard } from './common/guards/session.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { AccessController } from './modules/access/access.controller';
 @Module({
-  imports: [ServicesModule, ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true, load: [() => env] }), DatabaseModule, HealthModule, AuthModule, NotificationsModule, AdministrationModule, TicketsModule, BoardsModule, TaskLinksModule,
+  imports: [CalendarModule, ServicesModule, ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true, load: [() => env] }), DatabaseModule, HealthModule, AuthModule, NotificationsModule, AdministrationModule, TicketsModule, BoardsModule, TaskLinksModule,
     ThrottlerModule.forRoot({
       throttlers: [{ ttl: 60000, limit: 120 }],
       // Local UI work must not hit rate limits; production and LDAP keep them.

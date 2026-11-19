@@ -1,0 +1,10 @@
+$kind: http-request
+name: Cancelar evento
+order: 8000
+url: "{{baseUrl}}/admin/calendar/events/{{calendarEventId}}"
+method: DELETE
+headers:
+  - key: Origin
+    value: "{{appOrigin}}"
+  - key: X-CSRF-Token
+    value: "{{csrfToken}}"

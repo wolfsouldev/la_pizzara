@@ -1,0 +1,10 @@
+$kind: http-request
+name: Retirar solicitud propia
+order: 4000
+url: "{{baseUrl}}/calendar/requests/{{calendarRequestId}}"
+method: DELETE
+headers:
+  - key: Origin
+    value: "{{appOrigin}}"
+  - key: X-CSRF-Token
+    value: "{{csrfToken}}"

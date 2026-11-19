@@ -1,0 +1,5 @@
+$kind: http-request
+name: Ver agenda administrativa
+order: 5000
+url: "{{baseUrl}}/admin/calendar/events?from={{calendarFrom}}&to={{calendarTo}}"
+method: GET

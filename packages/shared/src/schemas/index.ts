@@ -28,3 +28,5 @@ export * from './notifications';
 export * from './services';
 
 export * from './task-planning';
+
+export * from './calendar';

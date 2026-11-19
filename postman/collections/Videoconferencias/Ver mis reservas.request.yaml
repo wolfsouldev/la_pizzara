@@ -1,0 +1,5 @@
+$kind: http-request
+name: Ver mis reservas
+order: 3000
+url: "{{baseUrl}}/calendar/requests"
+method: GET

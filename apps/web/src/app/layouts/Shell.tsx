@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type CSSProperties } from 'react';
 import { Link, NavLink, Outlet, useLocation, useMatch } from 'react-router';
-import { Activity, UserRound, ShieldCheck, LogOut, Building2, Tags, Users, ScrollText, Ticket, LayoutDashboard, Columns3, Bell, ChevronRight, Plus, FlaskConical, X, type LucideIcon } from 'lucide-react';
+import { CalendarDays, Activity, UserRound, ShieldCheck, LogOut, Building2, Tags, Users, ScrollText, Ticket, LayoutDashboard, Columns3, Bell, ChevronRight, Plus, FlaskConical, X, type LucideIcon } from 'lucide-react';
 import { NotificationsProvider } from '@/features/notifications/notifications';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
 import { useSession, useLogout } from '@/features/auth/auth';
@@ -61,6 +61,7 @@ function ShellContent({ area, title }: { area: Area; title: string }) {
     ] },
     { to: `/${area}/boards`, label: 'Tableros de trabajo', icon: Columns3 },
   ];
+  workspace.push({ to: `/${area}/calendar`, label: 'Videoconferencias', icon: CalendarDays });
   if (area !== 'app') workspace.push({ to: `/${area}/services`, label: 'Estado de servicios', icon: Activity });
   const administration: NavigationLink[] = area === 'admin' ? [
     { to: '/admin/departments', label: 'Departamentos', icon: Building2 },

@@ -1,0 +1,16 @@
+$kind: http-request
+name: Editar y publicar evento
+order: 7000
+url: "{{baseUrl}}/admin/calendar/events/{{calendarEventId}}"
+method: PATCH
+headers:
+  - key: Origin
+    value: "{{appOrigin}}"
+  - key: X-CSRF-Token
+    value: "{{csrfToken}}"
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {"title":"{{calendarTitle}}","startAt":{{calendarStart}},"endAt":{{calendarEnd}},"visibility":"PUBLIC"}

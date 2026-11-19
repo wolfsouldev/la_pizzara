@@ -5,7 +5,7 @@ import { UserRole, type NotificationList } from '@uni/shared';
 import { DatabaseService } from '../database.service';
 import { BoardsRepository } from './boards.repository';
 import { StaffTicketsRepository } from './staff-tickets.repository';
-import { users, notifications, tickets, tasks, boards, type User } from '../schema';
+import { users, notifications, tickets, tasks, boards, calendarRequests, type User } from '../schema';
 const projection = { id:notifications.id, type:notifications.type, title:notifications.title, message:notifications.message, resourceType:notifications.resourceType, resourceId:notifications.resourceId, readAt:notifications.readAt, createdAt:notifications.createdAt, boardId:tasks.boardId };
 @Injectable()
 export class NotificationsRepository {
@@ -17,7 +17,9 @@ export class NotificationsRepository {
     const owned = this.database.db.select({ id:tickets.id }).from(tickets).where(eq(tickets.requesterId,user.id));
     const staffTickets = this.database.db.select({ id:tickets.id }).from(tickets).where(this.staff.scope(user));
     const privateTasks = this.database.db.select({ id:tasks.id }).from(tasks).innerJoin(boards,eq(tasks.boardId,boards.id)).where(this.boardRepo.scope(user));
+    const ownedReservations = this.database.db.select({ id: calendarRequests.id }).from(calendarRequests).where(eq(calendarRequests.requesterId,user.id));
     return and(eq(notifications.userId,user.id),or(
+      and(eq(notifications.resourceType,'calendar_request'),inArray(notifications.resourceId,ownedReservations)),
       and(eq(notifications.resourceType,'ticket'),inArray(notifications.type,['TICKET_PUBLIC_REPLY','TICKET_STATUS_CHANGED']),inArray(notifications.resourceId,owned)),
       and(eq(notifications.resourceType,'ticket'),inArray(notifications.type,['TICKET_CREATED','TICKET_ASSIGNED']),inArray(notifications.resourceId,staffTickets)),
       and(eq(notifications.resourceType,'task'),eq(notifications.type,'TASK_ASSIGNED'),inArray(notifications.resourceId,privateTasks))

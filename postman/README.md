@@ -53,3 +53,13 @@ Despliegue fase 9: no se añaden endpoints REST ni colecciones duplicadas; el co
 `collections/Kanban categories` añade cuatro peticiones manuales de categorías por tablero. No contiene mocks, ejemplos generados, scripts ni assertions. Usa cookies reales con `--cookie-jar`; `id` es tablero, `labelId` categoría interna, `labelName` su nombre y `color` uno de los seis valores documentados. Valores vacíos intencionalmente; las escrituras requieren `origin` y `csrfToken` de sesión. No confundir con `categoryId` de tickets.
 
 TaskCreate/TaskPatch/TaskFromTicketCreate ahora admiten `labelIds`, y Task devuelve `labels`. Omitir `labelIds` en PATCH conserva la selección. Evidencia de una lectura autorizada y límites de verificación: [kanban-views](../docs/verification/kanban-views.md).
+
+## Videoconferencias
+
+La colección manual **Videoconferencias** acompaña a los endpoints de calendario.
+Usar una sesión real en el almacén de cookies, `baseUrl` terminado en `/api/v1`,
+`appOrigin` exacto y el `csrfToken` de la sesión. Completar fechas UTC en
+milisegundos, textos JSON válidos, cantidad e IDs reales antes de ejecutar cada
+petición. Alternar una cuenta de comunidad y una administrativa para comprobar
+la privacidad. Aprobar, rechazar, retirar y cancelar son operaciones alternativas:
+no ejecutar la colección completa en lote contra producción.

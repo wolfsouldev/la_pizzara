@@ -18,6 +18,15 @@ Este acceso requiere una habilitación explícita en el `.env` ignorado por Git.
 
 Ya hay panel de atención, resumen operativo de tickets y Kanban privado. Los tickets y las tareas ya pueden vincularse de forma privada. La campana y **Notificaciones** muestran tus avisos en vivo mediante WebSocket, con historial real en SQLite. Las páginas de permisos consultan rutas protegidas reales; no muestran estadísticas inventadas.
 
+## Calendario de videoconferencias
+
+El menú **Videoconferencias** abre la agenda institucional en vistas de mes,
+semana por horas y lista. Cualquier cuenta autenticada puede ver eventos públicos,
+solicitar un horario y seguir la decisión en **Mis reservas**. ADMIN y SUPER_ADMIN
+gestionan eventos públicos/privados y deciden sobre las solicitudes. Aprobar
+publica un único evento; el sistema evita reservas simultáneas. Consulta
+[el flujo y el despliegue del calendario](docs/calendar.md).
+
 ## Notificaciones en vivo (fase 8)
 
 - La campana muestra el contador de no leídas y los últimos cinco avisos. **Ver todas** abre historial paginado, filtro de no leídas y marcado individual o global. El enlace abre el ticket público/interno o la tarea autorizada.

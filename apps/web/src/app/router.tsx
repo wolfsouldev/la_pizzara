@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { ServicesPage } from '@/features/services/ServicesPage';
 import { NotificationsPage } from '@/features/notifications/NotificationsPage';
 import { BoardsPage } from '@/features/boards/BoardsPage';
@@ -22,6 +23,10 @@ import { AppLayout } from './layouts/AppLayout';
 import { StaffLayout } from './layouts/StaffLayout';
 import { AdminLayout } from './layouts/AdminLayout';
 
+const CalendarPage = lazy(() => import('@/features/calendar/CalendarPage').then(module => ({ default: module.CalendarPage })));
+function CalendarRoute({ admin = false }: { admin?: boolean }) {
+  return <Suspense fallback={<p role="status" className="py-8 text-sm text-muted-foreground">Cargando calendario…</p>}><CalendarPage admin={admin}/></Suspense>;
+}
 function BoardRoute() { const { id } = useParams(); return <BoardPage key={id}/>; }
 function StaffTicketDetailRoute() { const { id } = useParams(); return <StaffTicketDetailPage key={id}/>; }
 function TicketDetailRoute() { const { id } = useParams(); return <TicketDetailPage key={id}/>; }
@@ -36,14 +41,14 @@ const router = createBrowserRouter([
     { path: '/unauthorized', element: <main className="p-12"><h1 className="text-2xl font-semibold">No tienes permiso para acceder a esta sección</h1><p className="mt-4 text-muted-foreground">El rol de tu cuenta no permite abrir este panel.</p><Link to="/" className="mt-6 inline-block text-primary">Volver a mi perfil</Link></main> },
     { element: <ProtectedRoute/>, children: [
       { path: '/', element: <Home/> },
-      { path: '/app', element: <AppLayout/>, children: [{ index: true, element: <Navigate to="/app/tickets" replace/> }, { path: 'notifications', element: <NotificationsPage/> }, { path: 'profile', element: <ProfilePage/> }, { path: 'services', element: <ServicesPage/> }, { path: 'tickets', element: <MyTicketsPage/> }, { path: 'tickets/new', element: <NewTicketPage/> }, { path: 'tickets/:id', element: <TicketDetailRoute/> }] },
+      { path: '/app', element: <AppLayout/>, children: [{ index: true, element: <Navigate to="/app/tickets" replace/> }, { path: 'notifications', element: <NotificationsPage/> }, { path: 'profile', element: <ProfilePage/> }, { path: 'calendar', element: <CalendarRoute/> }, { path: 'services', element: <ServicesPage/> }, { path: 'tickets', element: <MyTicketsPage/> }, { path: 'tickets/new', element: <NewTicketPage/> }, { path: 'tickets/:id', element: <TicketDetailRoute/> }] },
     ] },
     { element: <ProtectedRoute roles={[UserRole.TECHNICIAN]}/>, children: [
-      { path: '/staff', element: <StaffLayout/>, children: [{ path: 'services', element: <ServicesPage/> }, { path: 'boards', element: <BoardsPage/> }, { path: 'boards/:id', element: <BoardRoute/> }, { path: 'tickets', element: <StaffTicketsPage key="all"/> }, { path: 'tickets/mine', element: <StaffTicketsPage key="mine" assignedToMe/> }, { path: 'tickets/:id', element: <StaffTicketDetailRoute/> }, { path: 'dashboard', element: <TicketDashboardPage/> }, { index: true, element: <Navigate to="/staff/dashboard" replace/> }, { path: 'notifications', element: <NotificationsPage/> }, { path: 'profile', element: <ProfilePage/> }, { path: 'access', element: <AccessPage area="staff"/> }] },
+      { path: '/staff', element: <StaffLayout/>, children: [{ path: 'calendar', element: <CalendarRoute/> }, { path: 'services', element: <ServicesPage/> }, { path: 'boards', element: <BoardsPage/> }, { path: 'boards/:id', element: <BoardRoute/> }, { path: 'tickets', element: <StaffTicketsPage key="all"/> }, { path: 'tickets/mine', element: <StaffTicketsPage key="mine" assignedToMe/> }, { path: 'tickets/:id', element: <StaffTicketDetailRoute/> }, { path: 'dashboard', element: <TicketDashboardPage/> }, { index: true, element: <Navigate to="/staff/dashboard" replace/> }, { path: 'notifications', element: <NotificationsPage/> }, { path: 'profile', element: <ProfilePage/> }, { path: 'access', element: <AccessPage area="staff"/> }] },
     ] },
     { element: <ProtectedRoute roles={[UserRole.ADMIN]}/>, children: [
       { path: '/admin', element: <AdminLayout/>, children: [
-        { path: 'services', element: <ServicesPage admin/> }, { path: 'departments', element: <DepartmentsPage/> }, { path: 'categories', element: <CategoriesPage/> },
+        { path: 'calendar', element: <CalendarRoute admin/> }, { path: 'services', element: <ServicesPage admin/> }, { path: 'departments', element: <DepartmentsPage/> }, { path: 'categories', element: <CategoriesPage/> },
         { path: 'boards', element: <BoardsPage/> }, { path: 'boards/:id', element: <BoardRoute/> }, { path: 'tickets', element: <StaffTicketsPage key="all"/> }, { path: 'tickets/mine', element: <StaffTicketsPage key="mine" assignedToMe/> }, { path: 'tickets/:id', element: <StaffTicketDetailRoute/> }, { path: 'dashboard', element: <TicketDashboardPage/> }, { path: 'audit', element: <AuditPage/> },
         { path: 'notifications', element: <NotificationsPage/> }, { path: 'profile', element: <ProfilePage/> }, { path: 'access', element: <AccessPage area="admin"/> },
         { index: true, element: <Navigate to="/admin/dashboard" replace/> },

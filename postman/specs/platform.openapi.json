@@ -13821,6 +13821,385 @@
           }
         }
       }
+    },
+    "/calendar/events": {
+      "get": {
+        "tags": ["Calendar"],
+        "summary": "Eventos públicos vigentes para la comunidad autenticada; rango de hasta 45 días.",
+        "security": [{"session":[]}],
+        "parameters": [
+          {"in":"query","name":"from","schema":{"type":"integer","format":"int64"},"required":true},
+          {"in":"query","name":"to","schema":{"type":"integer","format":"int64"},"required":true}
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"data":{"type":"array","items":{"$ref":"#/components/schemas/CalendarPublicEvent"}}},
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "401": {"description":"Sesión requerida"},
+          "403": {"description":"Permiso, origen o CSRF inválidos"},
+          "404": {"description":"Registro no disponible en este alcance"},
+          "409": {"description":"Conflicto de horario o estado"},
+          "422": {"description":"Entrada inválida"},
+          "429": {"description":"Límite de peticiones"},
+          "503": {"description":"Directorio no disponible"}
+        },
+        "operationId": "get_calendar_events"
+      }
+    },
+    "/admin/calendar/events": {
+      "get": {
+        "tags": ["Calendar"],
+        "summary": "ADMIN: eventos públicos y privados vigentes por rango.",
+        "security": [{"session":[]}],
+        "parameters": [
+          {"in":"query","name":"from","schema":{"type":"integer","format":"int64"},"required":true},
+          {"in":"query","name":"to","schema":{"type":"integer","format":"int64"},"required":true}
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"data":{"type":"array","items":{"$ref":"#/components/schemas/CalendarAdminEvent"}}},
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "401": {"description":"Sesión requerida"},
+          "403": {"description":"Permiso, origen o CSRF inválidos"},
+          "404": {"description":"Registro no disponible en este alcance"},
+          "409": {"description":"Conflicto de horario o estado"},
+          "422": {"description":"Entrada inválida"},
+          "429": {"description":"Límite de peticiones"},
+          "503": {"description":"Directorio no disponible"}
+        },
+        "operationId": "get_admin_calendar_events"
+      },
+      "post": {
+        "tags": ["Calendar"],
+        "summary": "ADMIN: crear evento manual; valida solapamientos de la agenda.",
+        "security": [{"session":[]}],
+        "parameters": [
+          {"name":"Origin","in":"header","required":true,"schema":{"type":"string"}},
+          {"name":"X-CSRF-Token","in":"header","required":true,"schema":{"type":"string"}}
+        ],
+        "responses": {
+          "201": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {"type":"object","properties":{"data":{"$ref":"#/components/schemas/CalendarAdminEvent"}},"required":["data"]}
+              }
+            }
+          },
+          "401": {"description":"Sesión requerida"},
+          "403": {"description":"Permiso, origen o CSRF inválidos"},
+          "404": {"description":"Registro no disponible en este alcance"},
+          "409": {"description":"Conflicto de horario o estado"},
+          "422": {"description":"Entrada inválida"},
+          "429": {"description":"Límite de peticiones"},
+          "503": {"description":"Directorio no disponible"}
+        },
+        "requestBody": {"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CalendarEventInput"}}}},
+        "operationId": "post_admin_calendar_events"
+      }
+    },
+    "/admin/calendar/events/{id}": {
+      "patch": {
+        "tags": ["Calendar"],
+        "summary": "ADMIN: editar evento; una reserva aprobada activa permanece pública.",
+        "security": [{"session":[]}],
+        "parameters": [
+          {"in":"path","name":"id","required":true,"schema":{"type":"string","format":"uuid"}},
+          {"name":"Origin","in":"header","required":true,"schema":{"type":"string"}},
+          {"name":"X-CSRF-Token","in":"header","required":true,"schema":{"type":"string"}}
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {"type":"object","properties":{"data":{"$ref":"#/components/schemas/CalendarAdminEvent"}},"required":["data"]}
+              }
+            }
+          },
+          "401": {"description":"Sesión requerida"},
+          "403": {"description":"Permiso, origen o CSRF inválidos"},
+          "404": {"description":"Registro no disponible en este alcance"},
+          "409": {"description":"Conflicto de horario o estado"},
+          "422": {"description":"Entrada inválida"},
+          "429": {"description":"Límite de peticiones"},
+          "503": {"description":"Directorio no disponible"}
+        },
+        "requestBody": {"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CalendarEventInput"}}}},
+        "operationId": "patch_admin_calendar_events_id"
+      },
+      "delete": {
+        "tags": ["Calendar"],
+        "summary": "ADMIN: cancelar y conservar historial; si hay reserva asociada, notifica al solicitante.",
+        "security": [{"session":[]}],
+        "parameters": [
+          {"in":"path","name":"id","required":true,"schema":{"type":"string","format":"uuid"}},
+          {"name":"Origin","in":"header","required":true,"schema":{"type":"string"}},
+          {"name":"X-CSRF-Token","in":"header","required":true,"schema":{"type":"string"}}
+        ],
+        "responses": {
+          "204": {"description":"Sin contenido"},
+          "401": {"description":"Sesión requerida"},
+          "403": {"description":"Permiso, origen o CSRF inválidos"},
+          "404": {"description":"Registro no disponible en este alcance"},
+          "409": {"description":"Conflicto de horario o estado"},
+          "422": {"description":"Entrada inválida"},
+          "429": {"description":"Límite de peticiones"},
+          "503": {"description":"Directorio no disponible"}
+        },
+        "operationId": "delete_admin_calendar_events_id"
+      }
+    },
+    "/calendar/requests": {
+      "get": {
+        "tags": ["Calendar"],
+        "summary": "Consultar únicamente las reservas propias.",
+        "security": [{"session":[]}],
+        "parameters": [
+          {"in":"query","name":"page","schema":{"type":"integer","minimum":1},"required":false},
+          {"in":"query","name":"limit","schema":{"type":"integer","minimum":1,"maximum":100},"required":false},
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {"type":"string","enum":["PENDING","APPROVED","REJECTED","WITHDRAWN"]},
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {"type":"array","items":{"$ref":"#/components/schemas/CalendarRequest"}},
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {"type":"integer","minimum":1,"maximum":10000},
+                        "limit": {"type":"integer","minimum":1,"maximum":10000},
+                        "total": {"type":"integer"},
+                        "totalPages": {"type":"integer"}
+                      },
+                      "required": ["page","limit","total","totalPages"]
+                    }
+                  },
+                  "required": ["data","meta"]
+                }
+              }
+            }
+          },
+          "401": {"description":"Sesión requerida"},
+          "403": {"description":"Permiso, origen o CSRF inválidos"},
+          "404": {"description":"Registro no disponible en este alcance"},
+          "409": {"description":"Conflicto de horario o estado"},
+          "422": {"description":"Entrada inválida"},
+          "429": {"description":"Límite de peticiones"},
+          "503": {"description":"Directorio no disponible"}
+        },
+        "operationId": "get_calendar_requests"
+      },
+      "post": {
+        "tags": ["Calendar"],
+        "summary": "Crear solicitud privada y pendiente; no bloquea horario.",
+        "security": [{"session":[]}],
+        "parameters": [
+          {"name":"Origin","in":"header","required":true,"schema":{"type":"string"}},
+          {"name":"X-CSRF-Token","in":"header","required":true,"schema":{"type":"string"}}
+        ],
+        "responses": {
+          "201": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {"type":"object","properties":{"data":{"$ref":"#/components/schemas/CalendarRequest"}},"required":["data"]}
+              }
+            }
+          },
+          "401": {"description":"Sesión requerida"},
+          "403": {"description":"Permiso, origen o CSRF inválidos"},
+          "404": {"description":"Registro no disponible en este alcance"},
+          "409": {"description":"Conflicto de horario o estado"},
+          "422": {"description":"Entrada inválida"},
+          "429": {"description":"Límite de peticiones"},
+          "503": {"description":"Directorio no disponible"}
+        },
+        "requestBody": {"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CalendarRequestInput"}}}},
+        "operationId": "post_calendar_requests"
+      }
+    },
+    "/calendar/requests/{id}": {
+      "delete": {
+        "tags": ["Calendar"],
+        "summary": "Retirar una solicitud propia pendiente.",
+        "security": [{"session":[]}],
+        "parameters": [
+          {"in":"path","name":"id","required":true,"schema":{"type":"string","format":"uuid"}},
+          {"name":"Origin","in":"header","required":true,"schema":{"type":"string"}},
+          {"name":"X-CSRF-Token","in":"header","required":true,"schema":{"type":"string"}}
+        ],
+        "responses": {
+          "204": {"description":"Sin contenido"},
+          "401": {"description":"Sesión requerida"},
+          "403": {"description":"Permiso, origen o CSRF inválidos"},
+          "404": {"description":"Registro no disponible en este alcance"},
+          "409": {"description":"Conflicto de horario o estado"},
+          "422": {"description":"Entrada inválida"},
+          "429": {"description":"Límite de peticiones"},
+          "503": {"description":"Directorio no disponible"}
+        },
+        "operationId": "delete_calendar_requests_id"
+      }
+    },
+    "/admin/calendar/requests": {
+      "get": {
+        "tags": ["Calendar"],
+        "summary": "ADMIN: bandeja paginada de solicitudes.",
+        "security": [{"session":[]}],
+        "parameters": [
+          {"in":"query","name":"page","schema":{"type":"integer","minimum":1},"required":false},
+          {"in":"query","name":"limit","schema":{"type":"integer","minimum":1,"maximum":100},"required":false},
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {"type":"string","enum":["PENDING","APPROVED","REJECTED","WITHDRAWN"]},
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {"type":"array","items":{"$ref":"#/components/schemas/CalendarReviewRequest"}},
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {"type":"integer","minimum":1,"maximum":10000},
+                        "limit": {"type":"integer","minimum":1,"maximum":10000},
+                        "total": {"type":"integer"},
+                        "totalPages": {"type":"integer"}
+                      },
+                      "required": ["page","limit","total","totalPages"]
+                    }
+                  },
+                  "required": ["data","meta"]
+                }
+              }
+            }
+          },
+          "401": {"description":"Sesión requerida"},
+          "403": {"description":"Permiso, origen o CSRF inválidos"},
+          "404": {"description":"Registro no disponible en este alcance"},
+          "409": {"description":"Conflicto de horario o estado"},
+          "422": {"description":"Entrada inválida"},
+          "429": {"description":"Límite de peticiones"},
+          "503": {"description":"Directorio no disponible"}
+        },
+        "operationId": "get_admin_calendar_requests"
+      }
+    },
+    "/admin/calendar/requests/{id}/approve": {
+      "post": {
+        "tags": ["Calendar"],
+        "summary": "ADMIN: aprobar pendiente y publicar exactamente un evento en una transacción.",
+        "security": [{"session":[]}],
+        "parameters": [
+          {"in":"path","name":"id","required":true,"schema":{"type":"string","format":"uuid"}},
+          {"name":"Origin","in":"header","required":true,"schema":{"type":"string"}},
+          {"name":"X-CSRF-Token","in":"header","required":true,"schema":{"type":"string"}}
+        ],
+        "responses": {
+          "201": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {"type":"object","properties":{"data":{"$ref":"#/components/schemas/CalendarReviewRequest"}},"required":["data"]}
+              }
+            }
+          },
+          "401": {"description":"Sesión requerida"},
+          "403": {"description":"Permiso, origen o CSRF inválidos"},
+          "404": {"description":"Registro no disponible en este alcance"},
+          "409": {"description":"Conflicto de horario o estado"},
+          "422": {"description":"Entrada inválida"},
+          "429": {"description":"Límite de peticiones"},
+          "503": {"description":"Directorio no disponible"}
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {"type":"string","nullable":true},
+                  "publicTitle": {"type":"string"},
+                  "publicDescription": {"type":"string","nullable":true}
+                },
+                "required": ["publicTitle"]
+              }
+            }
+          }
+        },
+        "operationId": "post_admin_calendar_requests_id_approve"
+      }
+    },
+    "/admin/calendar/requests/{id}/reject": {
+      "post": {
+        "tags": ["Calendar"],
+        "summary": "ADMIN: rechazar pendiente con motivo.",
+        "security": [{"session":[]}],
+        "parameters": [
+          {"in":"path","name":"id","required":true,"schema":{"type":"string","format":"uuid"}},
+          {"name":"Origin","in":"header","required":true,"schema":{"type":"string"}},
+          {"name":"X-CSRF-Token","in":"header","required":true,"schema":{"type":"string"}}
+        ],
+        "responses": {
+          "201": {
+            "description": "Operación correcta",
+            "content": {
+              "application/json": {
+                "schema": {"type":"object","properties":{"data":{"$ref":"#/components/schemas/CalendarReviewRequest"}},"required":["data"]}
+              }
+            }
+          },
+          "401": {"description":"Sesión requerida"},
+          "403": {"description":"Permiso, origen o CSRF inválidos"},
+          "404": {"description":"Registro no disponible en este alcance"},
+          "409": {"description":"Conflicto de horario o estado"},
+          "422": {"description":"Entrada inválida"},
+          "429": {"description":"Límite de peticiones"},
+          "503": {"description":"Directorio no disponible"}
+        },
+        "requestBody": {
+          "required": true,
+          "content": {"application/json":{"schema":{"type":"object","properties":{"note":{"type":"string"}},"required":["note"]}}}
+        },
+        "operationId": "post_admin_calendar_requests_id_reject"
+      }
     }
   },
   "components": {
@@ -17022,6 +17401,146 @@
             }
           }
         }
+      },
+      "CalendarPublicEvent": {
+        "type": "object",
+        "properties": {
+          "id": {"type":"string","format":"uuid"},
+          "type": {"type":"string","enum":["VIDEOCONFERENCE"]},
+          "title": {"type":"string"},
+          "publicDescription": {"type":"string","nullable":true},
+          "startAt": {"type":"integer","format":"int64"},
+          "endAt": {"type":"integer","format":"int64"}
+        },
+        "required": ["id","type","title","publicDescription","startAt","endAt"]
+      },
+      "CalendarAdminEvent": {
+        "type": "object",
+        "properties": {
+          "id": {"type":"string","format":"uuid"},
+          "type": {"type":"string","enum":["VIDEOCONFERENCE"]},
+          "title": {"type":"string"},
+          "publicDescription": {"type":"string","nullable":true},
+          "startAt": {"type":"integer","format":"int64"},
+          "endAt": {"type":"integer","format":"int64"},
+          "visibility": {"type":"string","enum":["PUBLIC","PRIVATE"]},
+          "internalNotes": {"type":"string","nullable":true},
+          "cancelledAt": {"type":"integer","format":"int64","nullable":true},
+          "requestId": {"type":"string","format":"uuid","nullable":true}
+        },
+        "required": ["id","type","title","publicDescription","startAt","endAt","visibility","internalNotes","cancelledAt","requestId"]
+      },
+      "CalendarEventInput": {
+        "type": "object",
+        "properties": {
+          "title": {"type":"string"},
+          "startAt": {"type":"integer","format":"int64"},
+          "endAt": {"type":"integer","format":"int64"},
+          "visibility": {"type":"string","enum":["PUBLIC","PRIVATE"]},
+          "publicDescription": {"type":"string","nullable":true},
+          "internalNotes": {"type":"string","nullable":true}
+        },
+        "required": ["title","startAt","endAt","visibility"]
+      },
+      "CalendarRequestInput": {
+        "type": "object",
+        "properties": {
+          "title": {"type":"string"},
+          "purpose": {"type":"string"},
+          "attendees": {"type":"integer","minimum":1,"maximum":10000},
+          "notes": {"type":"string","nullable":true},
+          "startAt": {"type":"integer","format":"int64"},
+          "endAt": {"type":"integer","format":"int64"}
+        },
+        "required": ["title","purpose","attendees","startAt","endAt"]
+      },
+      "CalendarRequest": {
+        "type": "object",
+        "properties": {
+          "id": {"type":"string","format":"uuid"},
+          "status": {"type":"string","enum":["PENDING","APPROVED","REJECTED","WITHDRAWN"]},
+          "title": {"type":"string"},
+          "purpose": {"type":"string"},
+          "attendees": {"type":"integer","minimum":1,"maximum":10000},
+          "notes": {"type":"string","nullable":true},
+          "startAt": {"type":"integer","format":"int64"},
+          "endAt": {"type":"integer","format":"int64"},
+          "decisionNote": {"type":"string","nullable":true},
+          "decidedAt": {"type":"integer","format":"int64","nullable":true},
+          "createdAt": {"type":"integer","format":"int64"},
+          "event": {
+            "type": "object",
+            "properties": {
+              "id": {"type":"string","format":"uuid"},
+              "startAt": {"type":"integer","format":"int64"},
+              "endAt": {"type":"integer","format":"int64"},
+              "cancelledAt": {"type":"integer","format":"int64","nullable":true}
+            },
+            "required": ["id","startAt","endAt","cancelledAt"],
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "title",
+          "purpose",
+          "attendees",
+          "notes",
+          "startAt",
+          "endAt",
+          "decisionNote",
+          "decidedAt",
+          "createdAt",
+          "event"
+        ]
+      },
+      "CalendarReviewRequest": {
+        "type": "object",
+        "properties": {
+          "id": {"type":"string","format":"uuid"},
+          "status": {"type":"string","enum":["PENDING","APPROVED","REJECTED","WITHDRAWN"]},
+          "title": {"type":"string"},
+          "purpose": {"type":"string"},
+          "attendees": {"type":"integer","minimum":1,"maximum":10000},
+          "notes": {"type":"string","nullable":true},
+          "startAt": {"type":"integer","format":"int64"},
+          "endAt": {"type":"integer","format":"int64"},
+          "decisionNote": {"type":"string","nullable":true},
+          "decidedAt": {"type":"integer","format":"int64","nullable":true},
+          "createdAt": {"type":"integer","format":"int64"},
+          "event": {
+            "type": "object",
+            "properties": {
+              "id": {"type":"string","format":"uuid"},
+              "startAt": {"type":"integer","format":"int64"},
+              "endAt": {"type":"integer","format":"int64"},
+              "cancelledAt": {"type":"integer","format":"int64","nullable":true}
+            },
+            "required": ["id","startAt","endAt","cancelledAt"],
+            "nullable": true
+          },
+          "requester": {
+            "type": "object",
+            "properties": {"id":{"type":"string","format":"uuid"},"displayName":{"type":"string"}},
+            "required": ["id","displayName"]
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "title",
+          "purpose",
+          "attendees",
+          "notes",
+          "startAt",
+          "endAt",
+          "decisionNote",
+          "decidedAt",
+          "createdAt",
+          "event",
+          "requester"
+        ]
       }
     }
   },

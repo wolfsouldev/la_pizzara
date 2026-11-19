@@ -1,0 +1,16 @@
+$kind: http-request
+name: Aprobar y publicar solicitud
+order: 10000
+url: "{{baseUrl}}/admin/calendar/requests/{{calendarRequestId}}/approve"
+method: POST
+headers:
+  - key: Origin
+    value: "{{appOrigin}}"
+  - key: X-CSRF-Token
+    value: "{{csrfToken}}"
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {"publicTitle":"{{calendarTitle}}"}

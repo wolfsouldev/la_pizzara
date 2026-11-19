@@ -1,0 +1,5 @@
+$kind: http-request
+name: Ver solicitudes pendientes
+order: 9000
+url: "{{baseUrl}}/admin/calendar/requests?status=PENDING"
+method: GET

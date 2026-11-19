@@ -12,6 +12,7 @@ export class NotificationsService {
   private dto(user:User,row:NonNullable<ReturnType<NotificationsRepository['get']>>) {
     const {boardId,...data}=row;const area=user.role==='SUPER_ADMIN'||user.role==='ADMIN'?'admin':'staff';
     const publicTicket=['TICKET_PUBLIC_REPLY','TICKET_STATUS_CHANGED'].includes(row.type);
+    if (row.resourceType === 'calendar_request') return { ...data, href: '/app/calendar?tab=mine' };
     return {...data,href:row.resourceType==='task'&&boardId?`/${area}/boards/${boardId}?taskId=${row.resourceId}`:row.resourceType==='ticket'?`/${publicTicket?'app':area}/tickets/${row.resourceId}`:null};
   }
   list(user:User,q:NotificationList) { const result=this.notifications.list(user,q);return new PaginatedResult({rows:result.rows.map(row=>this.dto(user,row)),total:result.total},q); }
@@ -28,6 +29,10 @@ export class NotificationsService {
     this.send(ticket, ticket.requesterId, actorId, 'TICKET_STATUS_CHANGED', 'Estado actualizado en', `Estado: ${labels[status]}`, now);
   }
   taskAssigned(task: TaskRow, userId: string, actorId: string, now: number) { if (userId !== actorId) this.create({ userId, type: 'TASK_ASSIGNED', title: 'Nueva tarea asignada', message: task.title, resourceType: 'task', resourceId: task.id, createdAt: now }); }
+  calendarReservation(userId: string, requestId: string, outcome: 'APPROVED' | 'REJECTED' | 'CANCELLED', now: number) {
+    const title = { APPROVED: 'Reserva aprobada', REJECTED: 'Reserva rechazada', CANCELLED: 'Reserva cancelada' }[outcome];
+    this.create({ userId, type: `CALENDAR_RESERVATION_${outcome}`, title, message: 'Consulta el estado y los detalles en Mis reservas.', resourceType: 'calendar_request', resourceId: requestId, createdAt: now });
+  }
   ticketCreated(ticket: Ticket, actorId: string, now: number) {
     for (const user of this.notifications.activeAdministratorsExcept(actorId)) this.create({ userId: user.id, type: 'TICKET_CREATED', title: `Nueva solicitud ${ticketNumber(ticket.ticketNumber)}`, message: ticket.title, resourceType: 'ticket', resourceId: ticket.id, createdAt: now });
   }
