@@ -52,7 +52,7 @@ export function TaskForm({ board, task, initialColumnId, initialParentTaskId, so
         <Field id={`${id}-column`} label="Columna inicial" error={errors.columnId?.message}><FormSelect id={`${id}-column`} aria-invalid={!!errors.columnId} aria-describedby={errors.columnId ? `${id}-column-error` : undefined} control={form.control} name="columnId">{board.columns.map(c => <SelectOption key={c.id} value={c.id}>{c.name}</SelectOption>)}</FormSelect></Field>
         <fieldset className="rounded-lg border border-border p-4"><legend className="px-1 text-sm font-medium">Responsables iniciales (opcionales)</legend>
           {members.data?.filter(m => m.eligible).map(m => <label key={m.userId} className="my-2 flex min-h-8 items-center gap-3"><input type="checkbox" value={m.userId} {...form.register('assigneeIds')}/>{m.displayName}</label>)}
-          {!members.data?.some(m => m.eligible) && <p className="text-xs leading-5 text-muted-foreground">Sin miembros elegibles todavía. Puedes añadir responsables después.</p>}
+          {!members.data?.some(m => m.eligible) && <p className="text-xs leading-5 text-muted-foreground">No hay responsables elegibles. Un administrador del tablero puede incorporar técnicos.</p>}
           {errors.assigneeIds && <p role="alert" className="mt-2 text-xs text-destructive">{errors.assigneeIds.message}</p>}
         </fieldset>
       </>}

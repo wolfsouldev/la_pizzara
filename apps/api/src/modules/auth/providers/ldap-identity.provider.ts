@@ -1,10 +1,9 @@
 import { Injectable, UnauthorizedException, ServiceUnavailableException } from '@nestjs/common';
-import { Client, InvalidCredentialsError, SizeLimitExceededError, type Entry } from 'ldapts';
+import { AndFilter, Client, EqualityFilter, InvalidCredentialsError, SizeLimitExceededError, type Entry } from 'ldapts';
 import { readDirectoryCa } from '../../../config/directory-ca';
 import { env } from '../../../config/environment';
 import type { AuthenticatedIdentity, IdentityProvider } from './identity-provider';
 
-function escapeFilter(value: string) { return value.replace(/[\\*()\0]/g, c => `\\${c.charCodeAt(0).toString(16).padStart(2, '0')}`); }
 function rawAttribute(entry: Entry, key: string) {
   return entry[Object.keys(entry).find(k => k.toLowerCase() === key.toLowerCase()) ?? key];
 }
@@ -32,12 +31,12 @@ function guidBytes(entry: Entry) {
 function stableGuid(b: Buffer) {
   return `${b.readUInt32LE(0).toString(16).padStart(8, '0')}-${b.readUInt16LE(4).toString(16).padStart(4, '0')}-${b.readUInt16LE(6).toString(16).padStart(4, '0')}-${b.subarray(8, 10).toString('hex')}-${b.subarray(10).toString('hex')}`;
 }
-function guidFilter(guid: string) {
+function guidToBytes(guid: string) {
   if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(guid)) throw new UnauthorizedException('Sesión no válida');
   const parts = guid.split('-'); const b = Buffer.alloc(16);
   b.writeUInt32LE(parseInt(parts[0]!, 16), 0); b.writeUInt16LE(parseInt(parts[1]!, 16), 4); b.writeUInt16LE(parseInt(parts[2]!, 16), 6);
   Buffer.from(parts[3]! + parts[4]!, 'hex').copy(b, 8);
-  return [...b].map(n => `\\${n.toString(16).padStart(2, '0')}`).join('');
+  return b;
 }
 
 @Injectable()
@@ -54,10 +53,15 @@ export class LdapIdentityProvider implements IdentityProvider {
     const control = text(entry, 'userAccountControl');
     return control !== null && /^\d+$/.test(control) && (Number(control) & 2) === 0;
   }
-  private async search(client: Client, filter: string) {
+  private async search(client: Client, identityFilter: EqualityFilter) {
     await client.bind(env.AD_BIND_DN, env.AD_BIND_PASSWORD);
     try {
-      const result = await client.search(env.AD_BASE_DN, { scope: 'sub', filter: `(&(objectCategory=person)(objectClass=user)${filter})`, sizeLimit: 2,
+      const filter = new AndFilter({ filters: [
+        new EqualityFilter({ attribute: 'objectCategory', value: 'person' }),
+        new EqualityFilter({ attribute: 'objectClass', value: 'user' }),
+        identityFilter,
+      ] });
+      const result = await client.search(env.AD_BASE_DN, { scope: 'sub', filter, sizeLimit: 2,
         attributes: ['objectGUID', 'sAMAccountName', 'userPrincipalName', 'displayName', 'givenName', 'sn', 'mail', 'department', 'distinguishedName', 'userAccountControl', 'primaryGroupID', 'memberOf'], explicitBufferAttributes: ['objectGUID'] });
       // A subtree search rooted at the domain naming context can legitimately
       // return referrals to AD's DomainDnsZones, ForestDnsZones, and Configuration
@@ -72,7 +76,7 @@ export class LdapIdentityProvider implements IdentityProvider {
       (env.AD_LOGIN_ATTRIBUTE === 'userPrincipalName' && !/^[^@]+@[^@]+$/.test(username))) throw new UnauthorizedException('Credenciales no válidas');
     const service = this.client(); let userClient: Client | undefined;
     try {
-      const entry = await this.search(service, `(${env.AD_LOGIN_ATTRIBUTE}=${escapeFilter(username)})`);
+      const entry = await this.search(service, new EqualityFilter({ attribute: env.AD_LOGIN_ATTRIBUTE, value: username }));
       if (!this.enabled(entry)) throw new UnauthorizedException('Credenciales no válidas');
       userClient = this.client();
       try { await userClient.bind(entry.dn, password); }
@@ -100,7 +104,9 @@ export class LdapIdentityProvider implements IdentityProvider {
   async inspectAccount(externalId: string): Promise<{ enabled: boolean; isDomainAdmin: boolean }> {
     const client = this.client();
     try {
-      const entry = await this.search(client, `(objectGUID=${guidFilter(externalId)})`);
+      // The string filter parser turns \\xx into text and re-encodes bytes >= 0x80 as UTF-8.
+      // Send a binary equality assertion so AD receives the exact 16 GUID bytes.
+      const entry = await this.search(client, new EqualityFilter({ attribute: 'objectGUID', value: guidToBytes(externalId) }));
       return { enabled: this.enabled(entry) && stableGuid(guidBytes(entry)) === externalId, isDomainAdmin: isDomainAdmin(entry) };
     }
     catch (error) { if (error instanceof UnauthorizedException) return { enabled: false, isDomainAdmin: false }; throw new ServiceUnavailableException('No se pudo verificar el estado de la cuenta institucional'); }

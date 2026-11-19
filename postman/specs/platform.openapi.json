@@ -288,6 +288,7 @@
       "get": {
         "operationId": "get_auth_me",
         "summary": "Consultar identidad, rol y CSRF de sesión",
+        "description": "No renueva el plazo de inactividad. Si corresponde revalidar una cuenta institucional, la API consulta por su objectGUID binario mediante LDAPS. Una cuenta ya no válida o un cambio de rol puede revocar la sesión (401); un fallo de comunicación con el directorio devuelve 503.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -5870,7 +5871,7 @@
             }
           }
         ],
-        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
+        "description": "Lista paginada de miembros explícitos y administradores activos (ADMIN/SUPER_ADMIN), sin duplicados. Los administradores pertenecen automáticamente con MANAGE.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -6017,7 +6018,7 @@
             }
           }
         ],
-        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
+        "description": "MANAGE incorpora técnicos activos del departamento. Los administradores ya pertenecen por rol y reciben 409 si se intentan añadir.",
         "responses": {
           "201": {
             "description": "Operación correcta",
@@ -6158,7 +6159,7 @@
             }
           }
         ],
-        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
+        "description": "MANAGE modifica el permiso de miembros explícitos activos y elegibles. Los administradores tienen MANAGE fijo por rol (409).",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -6297,7 +6298,7 @@
             }
           }
         ],
-        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
+        "description": "MANAGE retira membresías manuales, incluso en tableros archivados. Los administradores no se pueden retirar por tablero (409).",
         "responses": {
           "204": {
             "description": "Eliminado"
@@ -6415,7 +6416,7 @@
             }
           }
         ],
-        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF. Solo ADMIN/SUPER_ADMIN pueden incorporar cuentas ADMIN; las demás personas con MANAGE conservan los candidatos compatibles con su alcance.",
+        "description": "MANAGE busca técnicos activos del departamento aún no incorporados. ADMIN y SUPER_ADMIN pertenecen automáticamente y no aparecen como candidatos.",
         "responses": {
           "200": {
             "description": "Operación correcta",
@@ -7867,7 +7868,7 @@
             }
           }
         ],
-        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF.",
+        "description": "Interno: USER siempre denegado. ADMIN y SUPER_ADMIN tienen acceso global con permiso MANAGE; TECHNICIAN activo requiere pertenencia al departamento y al tablero. Los miembros elegibles son técnicos del departamento, administradores y superadministradores activos. VIEW lee; EDIT trabaja con tareas; MANAGE configura el tablero, miembros y columnas. ADMIN/SUPER_ADMIN pueden crear tableros. Tareas/tableros archivados son de solo lectura. Las escrituras requieren Origin y CSRF. Los ADMIN/SUPER_ADMIN activos no necesitan pertenencia manual; los técnicos requieren pertenencia explícita y elegible.",
         "responses": {
           "201": {
             "description": "Operación correcta",
@@ -15574,7 +15575,13 @@
           },
           "createdAt": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "nullable": true,
+            "description": "Fecha de alta manual; null para pertenencia automática."
+          },
+          "implicit": {
+            "type": "boolean",
+            "description": "Pertenencia automática por rol ADMIN/SUPER_ADMIN; permiso MANAGE fijo."
           }
         },
         "required": [
@@ -15585,7 +15592,8 @@
           "username",
           "isActive",
           "eligible",
-          "createdAt"
+          "createdAt",
+          "implicit"
         ]
       },
       "BoardCandidate": {
@@ -15604,8 +15612,6 @@
           "role": {
             "type": "string",
             "enum": [
-              "SUPER_ADMIN",
-              "ADMIN",
               "TECHNICIAN"
             ]
           }

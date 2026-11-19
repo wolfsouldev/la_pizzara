@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { and, count, desc, eq, getTableColumns, inArray, isNull, ne, notInArray, or, sql } from 'drizzle-orm';
-import { UserRole, type BoardCreate, type BoardPatch, type BoardList, type KanbanPage, type BoardCandidateQuery, type BoardPermission, type ColumnCreate, type ColumnPatch } from '@uni/shared';
+import { and, count, desc, eq, getTableColumns, inArray, isNull, isNotNull, notInArray, or, sql } from 'drizzle-orm';
+import { isAdminRole, UserRole, type BoardCreate, type BoardPatch, type BoardList, type KanbanPage, type BoardCandidateQuery, type BoardPermission, type ColumnCreate, type ColumnPatch } from '@uni/shared';
 import { DatabaseService } from '../database.service';
 import { boards, boardMembers, boardColumns, departments, departmentMembers, users, tasks, taskAssignees, type User } from '../schema';
 import { contains } from './list-query';
@@ -29,16 +29,31 @@ export class BoardsRepository {
   hasTasks(boardId: string, columnId: string) { return !!this.database.db.select({ id: tasks.id }).from(tasks).where(and(eq(tasks.boardId, boardId), eq(tasks.columnId, columnId))).limit(1).get(); }
   deleteColumn(boardId: string, id: string) { this.database.db.delete(boardColumns).where(and(eq(boardColumns.boardId, boardId), eq(boardColumns.id, id))).run(); }
   membership(boardId: string, userId: string) { return this.database.db.select().from(boardMembers).where(and(eq(boardMembers.boardId, boardId), eq(boardMembers.userId, userId))).get(); }
-  private eligibleCondition(departmentId: string) { return and(eq(users.isActive, true), or(eq(users.role, UserRole.SUPER_ADMIN), eq(users.role, UserRole.ADMIN), and(eq(users.role, UserRole.TECHNICIAN), inArray(users.id, this.database.db.select({ id: departmentMembers.userId }).from(departmentMembers).where(eq(departmentMembers.departmentId, departmentId)))))); }
+  private adminRoles() { return inArray(users.role, [UserRole.ADMIN, UserRole.SUPER_ADMIN]); }
+  private departmentTechnician(departmentId: string) {
+    return and(eq(users.role, UserRole.TECHNICIAN), inArray(users.id, this.database.db.select({ id: departmentMembers.userId }).from(departmentMembers).where(eq(departmentMembers.departmentId, departmentId))));
+  }
+  private eligibleCondition(departmentId: string) { return and(eq(users.isActive, true), or(this.adminRoles(), this.departmentTechnician(departmentId))); }
+  memberRole(userId: string) { return this.database.db.select({ role: users.role }).from(users).where(eq(users.id, userId)).get()?.role; }
   eligibleUser(departmentId: string, userId: string) { return this.database.db.select({ id: users.id, role: users.role }).from(users).where(and(eq(users.id, userId), this.eligibleCondition(departmentId))).get(); }
   members(boardId: string, departmentId: string, q: KanbanPage) {
-    const where = eq(boardMembers.boardId, boardId);
-    return { rows: this.database.db.select({ boardId: boardMembers.boardId, userId: boardMembers.userId, permission: boardMembers.permission, createdAt: boardMembers.createdAt, displayName: users.displayName, username: users.username, isActive: users.isActive, eligible: sql<boolean>`case when ${this.eligibleCondition(departmentId)} then 1 else 0 end`.mapWith(Boolean) }).from(boardMembers).innerJoin(users, eq(boardMembers.userId, users.id)).where(where).orderBy(users.displayName, users.id).limit(q.limit).offset((q.page - 1) * q.limit).all(), total: this.database.db.select({ n: count() }).from(boardMembers).where(where).get()!.n };
+    const on = and(eq(boardMembers.boardId, boardId), eq(boardMembers.userId, users.id));
+    const where = or(isNotNull(boardMembers.userId), and(this.adminRoles(), eq(users.isActive, true)));
+    const rows = this.database.db.select({
+      userId: users.id, role: users.role, permission: boardMembers.permission, createdAt: boardMembers.createdAt,
+      displayName: users.displayName, username: users.username, isActive: users.isActive,
+      eligible: sql<boolean>`case when ${this.eligibleCondition(departmentId)} then 1 else 0 end`.mapWith(Boolean),
+    }).from(users).leftJoin(boardMembers, on).where(where).orderBy(users.displayName, users.id).limit(q.limit).offset((q.page - 1) * q.limit).all();
+    return {
+      rows: rows.map(({ role, ...row }) => {
+        const implicit = isAdminRole(role);
+        return { ...row, boardId, implicit, permission: implicit ? 'MANAGE' as const : row.permission!, createdAt: implicit ? null : row.createdAt };
+      }),
+      total: this.database.db.select({ n: count() }).from(users).leftJoin(boardMembers, on).where(where).get()!.n,
+    };
   }
-  candidates(boardId: string, departmentId: string, actorRole: UserRole, q: BoardCandidateQuery) {
-    const eligible = actorRole === UserRole.ADMIN || actorRole === UserRole.SUPER_ADMIN
-      ? this.eligibleCondition(departmentId)
-      : and(this.eligibleCondition(departmentId), ne(users.role, UserRole.ADMIN));
+  candidates(boardId: string, departmentId: string, q: BoardCandidateQuery) {
+    const eligible = and(eq(users.isActive, true), this.departmentTechnician(departmentId));
     const where = and(eligible, notInArray(users.id, this.database.db.select({ id: boardMembers.userId }).from(boardMembers).where(eq(boardMembers.boardId, boardId))), q.search ? or(contains(users.displayName, q.search), contains(users.username, q.search)) : undefined);
     return { rows: this.database.db.select({ id: users.id, displayName: users.displayName, username: users.username, role: users.role }).from(users).where(where).orderBy(users.displayName, users.id).limit(q.limit).offset((q.page - 1) * q.limit).all(), total: this.database.db.select({ n: count() }).from(users).where(where).get()!.n };
   }

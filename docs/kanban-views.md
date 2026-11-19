@@ -17,7 +17,7 @@ Se conservan responsables, fechas, checklist, comentarios, vínculos privados, a
 
 - USER nunca accede a tableros ni categorías internas. ADMIN y SUPER_ADMIN tienen acceso global MANAGE; ADMIN puede crear y administrar tableros.
 - VIEW consulta; EDIT asigna categorías y modifica/mueve tareas; MANAGE administra categorías, columnas y miembros. TECHNICIAN necesita pertenencia elegible al tablero.
-- Se pueden añadir como responsables técnicos activos del departamento, ADMIN y SUPER_ADMIN activos; deben ser miembros explícitos del tablero para recibir tareas. ADMIN/SUPER_ADMIN pueden incorporar cuentas ADMIN; un técnico con MANAGE no puede enumerarlas ni incorporarlas. Los usuarios USER nunca pueden añadirse a tableros internos.
+- ADMIN y SUPER_ADMIN activos pertenecen automáticamente a todos los tableros (existentes, nuevos y archivados) y ya aparecen como responsables elegibles. No se pueden retirar ni editar sus permisos por tablero. Las membresías manuales antiguas se conservan sin duplicar personas ni tocar asignaciones existentes. Los técnicos activos del departamento siguen necesitando alta manual; USER no es elegible.
 - El backend comprueba acceso, pertenencia al tablero y estado archivado. No acepta categorías de otro tablero ni movimientos entre tableros.
 - Nombres únicos por tablero sin distinguir mayúsculas; máximo 100 categorías por tablero y 20 por tarea. Colores limitados a seis valores validados.
 - Eliminar una categoría retira sus asociaciones sin eliminar ninguna tarea. Requiere confirmación y se registra en auditoría.

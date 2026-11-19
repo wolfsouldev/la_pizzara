@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { UserRole, type BoardCreate, type BoardPatch, type BoardList, type BoardPermission, type BoardDetail, type KanbanPage, type BoardCandidateQuery, type ColumnCreate, type ColumnPatch } from '@uni/shared';
+import { isAdminRole, type BoardCreate, type BoardPatch, type BoardList, type BoardPermission, type BoardDetail, type KanbanPage, type BoardCandidateQuery, type ColumnCreate, type ColumnPatch } from '@uni/shared';
 import { BoardsRepository } from '../../database/repositories/boards.repository';
 import { TasksRepository } from '../../database/repositories/tasks.repository';
 import { AuditRepository } from '../../database/repositories/audit.repository';
@@ -23,18 +23,22 @@ export class BoardsService {
   update(user: User, id: string, patch: BoardPatch) { return this.unit.run(() => { this.policy.require(user, id, 'MANAGE'); this.boards.update(id, patch, Date.now()); this.audit.record(user.id, 'BOARD_UPDATED', 'board', id, { fields: Object.keys(patch) }); return this.detail(user, id); }); }
   archive(user: User, id: string) { return this.unit.run(() => { this.policy.require(user, id, 'MANAGE'); this.boards.update(id, { isArchived: true }, Date.now()); this.audit.record(user.id, 'BOARD_ARCHIVED', 'board', id); return this.detail(user, id); }); }
   members(user: User, id: string, q: KanbanPage) { const { board } = this.policy.require(user, id); return new PaginatedResult(this.boards.members(id, board.departmentId, q), q); }
-  candidates(user: User, id: string, q: BoardCandidateQuery) { const { board } = this.policy.require(user, id, 'MANAGE'); return new PaginatedResult(this.boards.candidates(id, board.departmentId, user.role, q), q); }
-  private memberResult(boardId: string, userId: string, departmentId: string) { const membership = this.boards.membership(boardId, userId)!; const person = this.tasks.author(userId); return { ...membership, userId, displayName: person.displayName, username: person.username, isActive: true, eligible: !!this.boards.eligibleUser(departmentId, userId) }; }
+  candidates(user: User, id: string, q: BoardCandidateQuery) { const { board } = this.policy.require(user, id, 'MANAGE'); return new PaginatedResult(this.boards.candidates(id, board.departmentId, q), q); }
+  private memberResult(boardId: string, userId: string, departmentId: string) { const membership = this.boards.membership(boardId, userId)!; const person = this.tasks.author(userId); return { ...membership, userId, displayName: person.displayName, username: person.username, isActive: true, implicit: false, eligible: !!this.boards.eligibleUser(departmentId, userId) }; }
+  private assertManualMember(userId: string) {
+    const role = this.boards.memberRole(userId);
+    if (role && isAdminRole(role)) throw new ConflictException('Los administradores pertenecen a todos los tableros con permiso MANAGE por su rol');
+  }
   addMember(user: User, id: string, userId: string, permission: BoardPermission) {
-    return this.unit.run(() => { const { board } = this.policy.require(user, id, 'MANAGE'); const candidate = this.boards.eligibleUser(board.departmentId, userId); if (!candidate || (user.role === UserRole.TECHNICIAN && candidate.role === UserRole.ADMIN)) throw new ConflictException('Debe ser un técnico activo del departamento o un administrador incorporado por ADMIN/SUPER_ADMIN'); if (this.boards.membership(id, userId)) throw new ConflictException('El usuario ya es miembro');
+    return this.unit.run(() => { const { board } = this.policy.require(user, id, 'MANAGE'); this.assertManualMember(userId); if (!this.boards.eligibleUser(board.departmentId, userId)) throw new ConflictException('Debe ser un técnico activo del departamento'); if (this.boards.membership(id, userId)) throw new ConflictException('El usuario ya es miembro');
       this.boards.addMember(id, userId, permission, Date.now()); this.audit.record(user.id, 'BOARD_MEMBER_ADDED', 'board', id, { userId, permission }); return this.memberResult(id, userId, board.departmentId); });
   }
   changeMember(user: User, id: string, userId: string, permission: BoardPermission) {
-    return this.unit.run(() => { const { board } = this.policy.require(user, id, 'MANAGE'); const before = this.boards.membership(id, userId); if (!before) throw new NotFoundException('Miembro no encontrado'); if (!this.boards.eligibleUser(board.departmentId, userId)) throw new ConflictException('El miembro ya no es elegible; retíralo o reactívalo antes de modificar su permiso');
+    return this.unit.run(() => { const { board } = this.policy.require(user, id, 'MANAGE'); this.assertManualMember(userId); const before = this.boards.membership(id, userId); if (!before) throw new NotFoundException('Miembro no encontrado'); if (!this.boards.eligibleUser(board.departmentId, userId)) throw new ConflictException('El miembro ya no es elegible; retíralo o reactívalo antes de modificar su permiso');
       this.boards.permission(id, userId, permission); this.audit.record(user.id, 'BOARD_PERMISSION_CHANGED', 'board', id, { userId, before: before.permission, after: permission }); return this.memberResult(id, userId, board.departmentId); });
   }
   removeMember(user: User, id: string, userId: string) {
-    this.unit.run(() => { this.policy.require(user, id, 'MANAGE', true); if (!this.boards.membership(id, userId)) throw new NotFoundException('Miembro no encontrado');
+    this.unit.run(() => { this.policy.require(user, id, 'MANAGE', true); this.assertManualMember(userId); if (!this.boards.membership(id, userId)) throw new NotFoundException('Miembro no encontrado');
       const now = Date.now(); const affected = this.boards.activeAssignments(id, userId);
       for (const row of affected) { this.boards.removeAssignment(row.taskId, userId); this.tasks.update(user, row.taskId, {}, now); this.tasks.event(row.taskId, user.id, 'ASSIGNEE_REMOVED', now, { userId, reason: 'BOARD_MEMBERSHIP_REMOVED' }); }
       this.boards.removeMember(id, userId); this.audit.record(user.id, 'BOARD_MEMBER_REMOVED', 'board', id, { userId, unassignedTasks: affected.length });

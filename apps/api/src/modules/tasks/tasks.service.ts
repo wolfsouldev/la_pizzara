@@ -1,5 +1,6 @@
 import { TaskPlanningRepository } from '../../database/repositories/task-planning.repository';
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { isAdminRole } from '@uni/shared';
 import type { TaskCreate, TaskPatch, TaskList, TaskMove, TaskMoveResult, KanbanPage, ChecklistPatch, BoardLabelInput } from '@uni/shared';
 import { TasksRepository } from '../../database/repositories/tasks.repository';
 import { BoardsRepository } from '../../database/repositories/boards.repository';
@@ -20,7 +21,7 @@ export class TasksService {
   deleteLabel(user: User, boardId: string, id: string) { this.unit.run(() => { this.boardPolicy.require(user, boardId, 'MANAGE'); if (!this.tasks.label(boardId, id)) throw new NotFoundException('Categoría no encontrada'); this.tasks.deleteLabel(boardId, id); this.audit.record(user.id, 'BOARD_LABEL_DELETED', 'board', boardId, { labelId: id }); }); }
   detail(user: User, id: string) { const { task, board } = this.policy.require(user, id); return { ...this.tasks.hydrate(user, [task])[0]!, author: this.tasks.author(task.createdById), boardName: board.board.name, columnName: this.boards.column(task.boardId, task.columnId)!.name, canEdit: !board.board.isArchived && task.archivedAt === null && board.permission !== 'VIEW' }; }
   list(user: User, boardId: string, q: TaskList) { this.boardPolicy.require(user, boardId); return new PaginatedResult(this.tasks.list(user, boardId, q), q); }
-  private eligible(boardId: string, departmentId: string, userId: string) { if (!this.boards.membership(boardId, userId) || !this.boards.eligibleUser(departmentId, userId)) throw new ConflictException('El responsable debe ser miembro activo y elegible del tablero'); }
+  private eligible(boardId: string, departmentId: string, userId: string) { const candidate = this.boards.eligibleUser(departmentId, userId); if (!candidate || (!isAdminRole(candidate.role) && !this.boards.membership(boardId, userId))) throw new ConflictException('El responsable debe ser miembro activo y elegible del tablero'); }
   create(user: User, boardId: string, input: TaskCreate) {
     return this.unit.run(() => { const { board } = this.boardPolicy.require(user, boardId, 'EDIT'); if (input.boardId && input.boardId !== boardId) throw new ConflictException('El tablero del cuerpo no coincide con la ruta'); if (!this.boards.column(boardId, input.columnId)) throw new NotFoundException('Columna no encontrada en este tablero');
       if (input.parentTaskId) { const parent = this.policy.require(user, input.parentTaskId).task; if (parent.boardId !== boardId || parent.archivedAt !== null) throw new ConflictException('La tarea principal debe estar activa en el mismo tablero'); }
