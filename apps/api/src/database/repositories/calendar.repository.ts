@@ -4,7 +4,7 @@ import type { CalendarRange, CalendarRequestList } from '@uni/shared';
 import { DatabaseService } from '../database.service';
 import { calendarEvents as events, calendarRequests as requests, users } from '../schema';
 
-const publicFields = { id: events.id, type: events.type, title: events.title, publicDescription: events.publicDescription, startAt: events.startAt, endAt: events.endAt };
+const publicFields = { id: events.id, type: events.type, title: events.title, publicDescription: events.publicDescription, meetingLink: events.meetingLink, startAt: events.startAt, endAt: events.endAt };
 const adminFields = { ...publicFields, visibility: events.visibility, internalNotes: events.internalNotes, requestId: events.requestId, cancelledAt: events.cancelledAt };
 const requestFields = { id: requests.id, title: requests.title, startAt: requests.startAt, endAt: requests.endAt, purpose: requests.purpose, attendees: requests.attendees, notes: requests.notes, status: requests.status, decisionNote: requests.decisionNote, decidedAt: requests.decidedAt, createdAt: requests.createdAt, event: { id: events.id, startAt: events.startAt, endAt: events.endAt, cancelledAt: events.cancelledAt } };
 const reviewFields = { ...requestFields, requester: { id: users.id, displayName: users.displayName } };

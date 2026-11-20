@@ -21,7 +21,7 @@ export function useCalendarMutation(onSaved: () => void) {
 
 type Fields = {
   title: string; start: string; end: string; duration: string; visibility: 'PRIVATE' | 'PUBLIC';
-  publicDescription: string; internalNotes: string; purpose: string; attendees: string; notes: string;
+  publicDescription: string; meetingLink: string; internalNotes: string; purpose: string; attendees: string; notes: string;
 };
 const numberMinutes = (value: string) => /^\d+$/.test(value) ? Number(value) : NaN;
 const nullable = (value: string) => value.trim() || null;
@@ -33,7 +33,7 @@ export function CalendarForm({ event, day, hour, mode, onSaved }: { event?: Cale
   const form = useForm<Fields>({ defaultValues: {
     title: event?.title ?? '', start: event ? localInput(event.startAt) : `${day}T${String(hour).padStart(2, '0')}:00`,
     end: event ? localInput(event.endAt) : '', duration: event ? String((event.endAt - event.startAt) / 60000) : '60',
-    visibility: event?.visibility ?? 'PRIVATE', publicDescription: event?.publicDescription ?? '', internalNotes: event?.internalNotes ?? '',
+    visibility: event?.visibility ?? 'PRIVATE', publicDescription: event?.publicDescription ?? '', meetingLink: event?.meetingLink ?? '', internalNotes: event?.internalNotes ?? '',
     purpose: '', attendees: '1', notes: '',
   } });
   const submit = form.handleSubmit(value => {
@@ -45,7 +45,7 @@ export function CalendarForm({ event, day, hour, mode, onSaved }: { event?: Cale
     if (endAt === undefined || !Number.isFinite(endAt)) { setError('Introduce una duración en minutos o una hora de fin válida y no ambigua.'); return; }
     const slot = { startAt, endAt, title: value.title };
     const parsed = mode === 'event'
-      ? calendarEventInputSchema.safeParse({ ...slot, visibility: value.visibility, publicDescription: nullable(value.publicDescription), internalNotes: nullable(value.internalNotes) })
+      ? calendarEventInputSchema.safeParse({ ...slot, visibility: value.visibility, publicDescription: nullable(value.publicDescription), meetingLink: value.meetingLink || null, internalNotes: nullable(value.internalNotes) })
       : calendarRequestInputSchema.safeParse({ ...slot, purpose: value.purpose, attendees: numberMinutes(value.attendees), notes: nullable(value.notes) });
     if (!parsed.success) {
       setError(parsed.error.issues.map(issue => {
@@ -69,6 +69,8 @@ export function CalendarForm({ event, day, hour, mode, onSaved }: { event?: Cale
       {mode === 'event' ? <>
         <label>Visibilidad<SelectInput value={form.watch('visibility')} disabled={Boolean(event?.requestId)} onValueChange={value => form.setValue('visibility', value === 'PUBLIC' ? 'PUBLIC' : 'PRIVATE')}><SelectOption value="PRIVATE">Privado · administración</SelectOption><SelectOption value="PUBLIC">Público · comunidad autenticada</SelectOption></SelectInput></label>
         <label>Descripción pública (opcional)<textarea rows={3} maxLength={2000} {...form.register('publicDescription')}/></label>
+        <label>Enlace de acceso (opcional)<input type="text" placeholder="Pega el enlace de la videoconferencia" {...form.register('meetingLink')}/></label>
+        <p className="text-xs text-muted-foreground">Si publicas el evento, la comunidad autenticada verá este enlace.</p>
         <label>Notas internas (opcional)<textarea rows={3} maxLength={2000} {...form.register('internalNotes')}/></label>
       </> : <>
         <label>Propósito de la videoconferencia<textarea required rows={3} maxLength={2000} {...form.register('purpose')}/></label>
@@ -86,12 +88,12 @@ export function DecisionForm({ request, onSaved }: { request: CalendarReviewRequ
   const [decision, setDecision] = useState<'approve' | 'reject' | null>(null);
   const [error, setError] = useState('');
   const mutation = useCalendarMutation(onSaved);
-  const form = useForm({ defaultValues: { publicTitle: request.title, publicDescription: '', note: '' } });
+  const form = useForm({ defaultValues: { publicTitle: request.title, publicDescription: '', meetingLink: '', note: '' } });
   const submit = form.handleSubmit(values => {
     setError('');
     if (!decision) return;
     const parsed = decision === 'approve'
-      ? calendarApproveSchema.safeParse({ publicTitle: values.publicTitle, publicDescription: nullable(values.publicDescription), note: nullable(values.note) })
+      ? calendarApproveSchema.safeParse({ publicTitle: values.publicTitle, publicDescription: nullable(values.publicDescription), meetingLink: values.meetingLink || null, note: nullable(values.note) })
       : calendarRejectSchema.safeParse({ note: values.note });
     if (!parsed.success) { setError(decision === 'reject' ? 'Escribe un motivo para rechazar la solicitud.' : 'Revisa el título público y la longitud de los textos.'); return; }
     mutation.mutate({ path: `/admin/calendar/requests/${request.id}/${decision}`, method: 'POST', body: parsed.data });
@@ -102,6 +104,7 @@ export function DecisionForm({ request, onSaved }: { request: CalendarReviewRequ
       <p className="text-sm text-muted-foreground">El título y el horario serán públicos en La Pizzara. Revisa que no contengan datos personales.</p>
       <label>Título público<input required maxLength={160} {...form.register('publicTitle')}/></label>
       <label>Descripción pública (opcional)<textarea rows={2} maxLength={2000} {...form.register('publicDescription')}/></label>
+      <label>Enlace de acceso (opcional)<input type="text" placeholder="Pega el enlace que se publicará" {...form.register('meetingLink')}/></label>
     </>}
     <label>{decision === 'reject' ? 'Motivo para el solicitante' : 'Nota para el solicitante (opcional)'}<textarea required={decision === 'reject'} rows={3} maxLength={2000} {...form.register('note')}/></label>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}

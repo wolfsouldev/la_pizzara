@@ -30,6 +30,7 @@ export const calendarEvents = sqliteTable('calendar_events', {
   type: text('type', { enum: ['VIDEOCONFERENCE'] }).notNull(),
   title: text('title').notNull(),
   publicDescription: text('public_description'),
+  meetingLink: text('meeting_link'),
   internalNotes: text('internal_notes'),
   startAt: integer('start_at').notNull(),
   endAt: integer('end_at').notNull(),

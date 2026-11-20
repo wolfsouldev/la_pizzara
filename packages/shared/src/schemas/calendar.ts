@@ -12,7 +12,7 @@ const validSlot = ({ startAt, endAt }: z.infer<z.ZodObject<typeof slot>>) => end
 
 export const calendarRangeSchema = z.object({ from: z.coerce.number().pipe(timestamp), to: z.coerce.number().pipe(timestamp) })
   .refine(({ from, to }) => to > from && to - from <= 45 * 86_400_000, 'Selecciona un rango de hasta 45 días');
-export const calendarEventInputSchema = z.strictObject({ ...slot, title, visibility, publicDescription: optionalNote, internalNotes: optionalNote })
+export const calendarEventInputSchema = z.strictObject({ ...slot, title, visibility, publicDescription: optionalNote, meetingLink: z.string().nullish(), internalNotes: optionalNote })
   .refine(validSlot, { path: ['endAt'], message: 'El evento debe durar entre 15 minutos y 7 días' });
 export const calendarRequestInputSchema = z.strictObject({ ...slot, title, purpose: note, attendees: z.number().int().min(1).max(10000), notes: optionalNote })
   .refine(validSlot, { path: ['endAt'], message: 'La reserva debe durar entre 15 minutos y 7 días' });
@@ -21,9 +21,9 @@ export const calendarRequestListSchema = z.object({
   page: z.coerce.number().int().min(1).max(100000).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
-export const calendarApproveSchema = z.strictObject({ publicTitle: title, note: optionalNote, publicDescription: optionalNote });
+export const calendarApproveSchema = z.strictObject({ publicTitle: title, note: optionalNote, publicDescription: optionalNote, meetingLink: z.string().nullish() });
 export const calendarRejectSchema = z.strictObject({ note });
-export const calendarPublicEventSchema = z.object({ ...slot, id: z.uuid(), type: z.literal('VIDEOCONFERENCE'), title, publicDescription: note.nullable() });
+export const calendarPublicEventSchema = z.object({ ...slot, id: z.uuid(), type: z.literal('VIDEOCONFERENCE'), title, publicDescription: note.nullable(), meetingLink: z.string().nullable() });
 export const calendarAdminEventSchema = calendarPublicEventSchema.extend({ visibility, internalNotes: note.nullable(), cancelledAt: timestamp.nullable(), requestId: z.uuid().nullable() });
 export const calendarRequestSchema = z.object({
   ...slot, id: z.uuid(), title, purpose: note, attendees: z.number().int(), notes: note.nullable(),

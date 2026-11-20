@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
-import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Plus, Video } from 'lucide-react';
+import { CalendarDays, ExternalLink, ChevronLeft, ChevronRight, Clock3, Plus, Video } from 'lucide-react';
 import { z } from 'zod';
 import { calendarAdminEventSchema, calendarPublicEventSchema, type CalendarAdminEvent } from '@uni/shared';
 import { api } from '@/lib/api-client';
@@ -18,6 +18,23 @@ const adminList = z.array(calendarAdminEventSchema);
 const views: { id: CalendarView; label: string }[] = [{ id: 'month', label: 'Mes' }, { id: 'week', label: 'Semana' }, { id: 'agenda', label: 'Agenda' }];
 const isAdminEvent = (event: DisplayEvent): event is CalendarAdminEvent => 'visibility' in event;
 type Panel = { kind: 'day'; day: string } | { kind: 'detail'; event: DisplayEvent } | { kind: 'event' | 'request'; day: string; hour: number; event?: CalendarAdminEvent };
+
+function MeetingLink({ value }: { value: string }) {
+  // Save any text; only navigate to absolute web links, never executable schemes.
+  let href: string | undefined;
+  try {
+    const url = new URL(value);
+    if (url.protocol === 'https:' || url.protocol === 'http:') href = url.href;
+  } catch { /* Non-URL text stays readable and selectable. */ }
+
+  return <div className="min-w-0 space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+    <p className="text-sm font-medium">Enlace de acceso</p>
+    <p dir="auto" className="whitespace-pre-wrap break-all text-sm text-muted-foreground">{value}</p>
+    {href && <Button asChild variant="outline" size="sm"><a href={href} target="_blank" rel="noopener noreferrer">
+      Abrir videoconferencia <ExternalLink aria-hidden="true"/><span className="sr-only"> (nueva pestaña)</span>
+    </a></Button>}
+  </div>;
+}
 
 export function CalendarPage({ admin = false }: { admin?: boolean }) {
   const [params, setParams] = useSearchParams();
@@ -116,6 +133,7 @@ export function CalendarPage({ admin = false }: { admin?: boolean }) {
           </>}
           {details && <>
             <div className="flex items-start gap-2 text-sm"><Clock3 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true"/><div>{dateTimeLabel(details.startAt)}<br/>{dateTimeLabel(details.endAt)}</div></div>
+            {details.meetingLink && <MeetingLink value={details.meetingLink}/>}
             {details.publicDescription && <p className="whitespace-pre-wrap break-words text-sm">{details.publicDescription}</p>}
             {managed && <>
               <span className="inline-block rounded-full border border-border px-3 py-1 text-xs">{managed.visibility === 'PUBLIC' ? 'Público' : 'Privado'}</span>

@@ -88,7 +88,7 @@ export class CalendarService {
       if (request.startAt <= Date.now()) throw new ConflictException('La hora solicitada ya pasó');
       this.available(request.startAt, request.endAt);
       const now = Date.now();
-      const event = this.repo.insertEvent({ id: randomUUID(), type: 'VIDEOCONFERENCE', title: input.publicTitle, publicDescription: input.publicDescription,
+      const event = this.repo.insertEvent({ id: randomUUID(), type: 'VIDEOCONFERENCE', title: input.publicTitle, publicDescription: input.publicDescription, meetingLink: input.meetingLink,
         startAt: request.startAt, endAt: request.endAt, visibility: 'PUBLIC', requestId: id, createdById: actor.id, createdAt: now, updatedAt: now });
       this.repo.decide(id, { status: 'APPROVED', decidedAt: now, decidedById: actor.id, decisionNote: input.note });
       this.audit.record(actor.id, 'CALENDAR_REQUEST_APPROVED', 'calendar_request', id, { eventId: event.id });
